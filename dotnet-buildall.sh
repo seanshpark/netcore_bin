@@ -1,14 +1,31 @@
 #!/bin/sh
+CLEAN=
+SKIPMSCORLIB=
+SKIPTESTS=skiptests
+LOG_FILE=~/git/dotnet_buildall.log
+TIME="time -o $LOG_FILE -a"
+
+if [ -e $LOG_FILE ];
+then
+	rm -f $LOG_FILE
+fi
+
+echo "[CORECLR - cross arm]" >> $LOG_FILE
 cd ~/git/coreclr
-time ROOTFS_DIR=~/arm-rootfs-coreclr/ ./build.sh clean arm cross verbose skipmscorlib
+ROOTFS_DIR=~/arm-rootfs-coreclr/ $TIME ./build.sh $CLEAN arm cross verbose $SKIPMSCORLIB
+echo "[COREFX - cross arm native]" >> $LOG_FILE
 cd ~/git/corefx
-time ROOTFS_DIR=~/arm-rootfs-corefx/ ./build.sh clean arm cross verbose native skiptests
-time ./build.sh verbose skiptests
+ROOTFS_DIR=~/arm-rootfs-corefx/ $TIME ./build.sh $CLEAN arm cross verbose native $SKIPTESTS
+$TIME ./build.sh verbose $SKIPTESTS
+echo "[CORECLR - cross arm-softfp]" >> $LOG_FILE
 cd ~/git/coreclr
-time ROOTFS_DIR=~/arm-softfp-rootfs-coreclr/ ./build.sh clean arm-softfp cross verbose skipmscorlib
+ROOTFS_DIR=~/arm-softfp-rootfs-coreclr/ $TIME ./build.sh $CLEAN arm-softfp cross verbose $SKIPMSCORLIB
+echo "[CORECLR]" >> $LOG_FILE
 cd ~/git/coreclr
-time ./build.sh verbose
+$TIME ./build.sh $CLEAN verbose
+echo "[CLI]" >> $LOG_FILE
 cd ~/git/cli
-time ./build.sh
+$TIME ./build.sh
+echo "[ROSLYN]" >> $LOG_FILE
 cd ~/git/roslyn
-time make
+$TIME make
