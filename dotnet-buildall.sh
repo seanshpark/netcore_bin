@@ -16,13 +16,13 @@ while [ -n "$1" ]
 do
 	case $1 in
 		clean)
-			$CLEAN=clean
+			CLEAN=clean
 			;;
 		skipmscorlib)
-			$SKIPMSCORLIB=skipmscorlib
+			SKIPMSCORLIB=skipmscorlib
 			;;
 		skiptests)
-			$SKIPTESTS=skiptests
+			SKIPTESTS=skiptests
 			;;
 	esac
 	shift
