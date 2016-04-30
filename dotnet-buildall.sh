@@ -41,6 +41,11 @@ date >> $LOG_FILE
 # define functions
 #
 
+function time_stamp
+{
+	date >> $LOG_FILE
+}
+
 function sync
 {
 	BRANCH=$(git -C $1 branch | grep '*' | cut -d' ' -f2-)
@@ -74,6 +79,7 @@ function sync_repo
 			done
 			;;
 	esac
+	time_stamp
 }
 
 function distclean 
@@ -85,6 +91,7 @@ function distclean
 			git -C $repo clean -xdf
 		fi
 	done
+	time_stamp
 }
 
 #
@@ -164,11 +171,13 @@ then
 	cd $BASE_PATH/coreclr
 	ROOTFS_DIR=~/arm-rootfs-coreclr/ $TIME ./build.sh $BUILD_TYPE $CLEAN arm cross verbose $SKIPTESTS $SKIPMSCORLIB 
 	echo "cross arm build result $?" >> $LOG_FILE
+	time_stamp
 
 	echo "[COREFX - cross arm native]" >> $LOG_FILE
 	cd $BASE_PATH/corefx
 	ROOTFS_DIR=~/arm-rootfs-corefx/ $TIME ./build.sh native $BUILD_TYPE $CLEAN arm cross verbose $SKIPTESTS
 	echo "cross arm native build result $?" >> $LOG_FILE
+	time_stamp
 fi
 
 #
@@ -180,6 +189,7 @@ then
 	cd $BASE_PATH/coreclr
 	ROOTFS_DIR=~/arm-softfp-rootfs-coreclr/ $TIME ./build.sh $BUILD_TYPE $CLEAN arm-softfp cross verbose $SKIPTESTS $SKIPMSCORLIB 
 	echo "cross arm-softfp build result $?" >> $LOG_FILE
+	time_stamp
 fi
 
 #
@@ -191,11 +201,13 @@ then
 	cd $BASE_PATH/coreclr
 	$TIME ./build.sh $BUILD_TYPE $CLEAN verbose
 	echo "build result $?" >> $LOG_FILE
+	time_stamp
 
 	echo "[COREFX - host]" >> $LOG_FILE
 	cd $BASE_PATH/corefx
 	$TIME ./build.sh native $BUILD_TYPE $CLEAN verbose $SKIPTESTS
 	echo "host build result $?" >> $LOG_FILE
+	time_stamp
 fi
 
 #
@@ -207,6 +219,7 @@ then
 	cd $BASE_PATH/corefx
 	$TIME ./build.sh managed $BUILD_TYPE $CLEAN verbose $SKIPTESTS
 	echo "managed build result $?" >> $LOG_FILE
+	time_stamp
 fi
 
 #
@@ -218,6 +231,7 @@ then
 	cd $BASE_PATH/cli
 	$TIME ./build.sh $BUILD_TYPE
 	echo "build result $?" >> $LOG_FILE
+	time_stamp
 fi
 
 #
@@ -229,6 +243,7 @@ then
 	cd $BASE_PATH/roslyn
 	$TIME make
 	echo "build result $?" >> $LOG_FILE
+	time_stamp
 fi
 
 date >> $LOG_FILE
