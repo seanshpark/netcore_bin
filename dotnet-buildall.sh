@@ -4,11 +4,29 @@ SKIPMSCORLIB=
 SKIPTESTS=skiptests
 LOG_FILE=~/git/dotnet_buildall.log
 TIME="time -o $LOG_FILE -a"
+TIME=$(which time)
+TIME="time"
 
 if [ -e $LOG_FILE ];
 then
 	rm -f $LOG_FILE
 fi
+
+while [ -n "$1" ]
+do
+	case $1 in
+		clean)
+			$CLEAN=clean
+			;;
+		skipmscorlib)
+			$SKIPMSCORLIB=skipmscorlib
+			;;
+		skiptests)
+			$SKIPTESTS=skiptests
+			;;
+	esac
+	shift
+done
 
 echo "[CORECLR - cross arm]" >> $LOG_FILE
 cd ~/git/coreclr
