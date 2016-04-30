@@ -22,6 +22,7 @@ cp -a $CORECLR_BASE/bin/Product/OSX.x64.Debug/*.dylib $TARGET/runtime/
 
 #find $COREFX_BASE/bin/AnyOS.AnyCPU.Debug -name *.exe -exec cp -a {} $TARGET/runtime \;
 find $COREFX_BASE/bin/AnyOS.AnyCPU.Debug -name *.dll -exec cp -a {} $TARGET/runtime \;
+find $COREFX_BASE/bin/Unix.AnyCPU.Debug -name *.dll -exec cp -a {} $TARGET/runtime \;
 ####find $COREFX_BASE/bin/AnyOS.AnyCPU.Debug -name *.pdb -exec cp -a {} $TARGET/runtime \;
 
 find $COREFX_BASE/bin/OSX.AnyCPU.Debug -name *.dll -exec cp -a {} $TARGET/runtime \;
@@ -30,3 +31,7 @@ find $COREFX_BASE/bin/OSX.AnyCPU.Debug -name *.dll -exec cp -a {} $TARGET/runtim
 #cp -a $COREFX_BASE/bin/OSX.AnyCPU.Debug/System.Diagnostics.Debug/System.Diagnostics.Debug.dll $TARGET/runtime/
 cp -a $COREFX_BASE/bin/OSX.x64.Debug/Native/*.dylib $TARGET/runtime/
 cp -a $COREFX_BASE/bin/OSX.x64.Debug/Native/*.a $TARGET/runtime/
+
+cd $TARGET/runtime
+mkdir tests
+mv *.Tests.dll tests
