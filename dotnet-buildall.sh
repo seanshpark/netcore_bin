@@ -34,66 +34,12 @@ then
 	rm -f $LOG_FILE
 fi
 
+echo $@ >> $LOG_FILE
+date >> $LOG_FILE
+
 #
-# parse command-line options
+# define functions
 #
-while [ -n "$1" ]
-do
-	case $1 in
-		all)
-			BUILD_ARM=YES
-			BUILD_SOFTFP=YES
-			BUILD_HOST=YES
-			BUILD_MANAGED=YES
-			BUILD_CLI=YES
-			BUILD_ROSLYN=YES
-			;;
-		arm)
-			BUILD_ARM=YES
-			BUILD_MANAGED=YES
-			;;
-		softfp)
-			BUILD_SOFTFP=YES
-			BUILD_MANAGED=YES
-			;;
-		host)
-			BUILD_HOST=YES
-			BUILD_MANAGED=YES
-			;;
-		CLI)
-			BUILD_CLI=YES
-			;;
-		loslyn)
-			BUILD_ROSLYN=YES
-			;;
-		native-only)
-			BUILD_MANAGED=
-			;;
-		quick)
-			CLEAN=
-			SKIPMSCORLIB=
-			SKIPTESTS=skiptests
-			break
-			;;
-		clean)
-			CLEAN=$1
-			;;
-		distclean)
-			DISTCLEAN=YES
-			break
-			;;
-		skipmscorlib)
-			SKIPMSCORLIB=$1
-			;;
-		skiptests)
-			SKIPTESTS=$1
-			;;
-		debug|release|checked)
-			BUILD_TYPE=$1
-			;;
-	esac
-	shift
-done
 
 function sync
 {
@@ -142,13 +88,72 @@ function distclean
 }
 
 #
-# clean completely
+# parse command-line options
 #
-if [ "$DISTCLEAN" =  "YES" ]
-then
-	distclean
-	exit
-fi
+while [ -n "$1" ]
+do
+	case $1 in
+		all)
+			BUILD_ARM=YES
+			BUILD_SOFTFP=YES
+			BUILD_HOST=YES
+			BUILD_MANAGED=YES
+			BUILD_CLI=YES
+			BUILD_ROSLYN=YES
+			;;
+		quick)
+			CLEAN=
+			SKIPMSCORLIB=
+			SKIPTESTS=skiptests
+			break
+			;;
+		arm)
+			BUILD_ARM=YES
+			BUILD_MANAGED=YES
+			;;
+		softfp)
+			BUILD_SOFTFP=YES
+			BUILD_MANAGED=YES
+			;;
+		host)
+			BUILD_HOST=YES
+			BUILD_MANAGED=YES
+			;;
+		CLI)
+			BUILD_CLI=YES
+			;;
+		loslyn)
+			BUILD_ROSLYN=YES
+			;;
+		skipmscorlib)
+			SKIPMSCORLIB=$1
+			;;
+		skiptests)
+			SKIPTESTS=$1
+			;;
+		debug|release|checked)
+			BUILD_TYPE=$1
+			;;
+		native-only)
+			BUILD_MANAGED=
+			;;
+		clean)
+			CLEAN=$1
+			;;
+		distclean)
+			distclean | tee -a $LOG_FILE
+			exit
+			;;
+		sync)
+			shift
+			sync_repo $@ | tee -a $LOG_FILE
+			exit
+			;;
+		update)
+			;;
+	esac
+	shift
+done
 
 #
 # build arm native
@@ -225,3 +230,5 @@ then
 	$TIME make
 	echo "build result $?" >> $LOG_FILE
 fi
+
+date >> $LOG_FILE
