@@ -109,6 +109,9 @@ do
 			BUILD_CLI=YES
 			BUILD_ROSLYN=YES
 			;;
+		managed)
+			BUILD_MANAGED=YES
+			;;
 		quick)
 			CLEAN=
 			SKIPMSCORLIB=
@@ -173,13 +176,13 @@ if [ "$BUILD_ARM" = "YES" ]
 then
 	echo "[CORECLR - cross arm]" >> $LOG_FILE
 	cd $BASE_PATH/coreclr
-	ROOTFS_DIR=~/arm-rootfs-coreclr/ $TIME ./build.sh $BUILD_TYPE $CLEAN arm cross $VERBOSE $SKIPTESTS $SKIPMSCORLIB 
+	ROOTFS_DIR=~/arm-rootfs-coreclr/ $TIME ./build.sh $BUILD_TYPE $CLEAN arm cross $VERBOSE $SKIPMSCORLIB #$SKIPTESTS
 	echo "cross arm build result $?" >> $LOG_FILE
 	time_stamp
 
 	echo "[COREFX - cross arm native]" >> $LOG_FILE
 	cd $BASE_PATH/corefx
-	ROOTFS_DIR=~/arm-rootfs-corefx/ $TIME ./build.sh native $BUILD_TYPE $CLEAN arm cross $VERBOSE $SKIPTESTS
+	ROOTFS_DIR=~/arm-rootfs-corefx/ $TIME ./build.sh native $BUILD_TYPE $CLEAN arm cross $VERBOSE #$SKIPTESTS
 	echo "cross arm native build result $?" >> $LOG_FILE
 	time_stamp
 fi
@@ -191,7 +194,7 @@ if [ "$BUILD_SOFTFP" = "YES" ]
 then
 	echo "[CORECLR - cross arm-softfp]" >> $LOG_FILE
 	cd $BASE_PATH/coreclr
-	ROOTFS_DIR=~/arm-softfp-rootfs-coreclr/ $TIME ./build.sh $BUILD_TYPE $CLEAN arm-softfp cross $VERBOSE $SKIPTESTS $SKIPMSCORLIB 
+	ROOTFS_DIR=~/arm-softfp-rootfs-coreclr/ $TIME ./build.sh $BUILD_TYPE $CLEAN arm-softfp cross $VERBOSE $SKIPMSCORLIB #$SKIPTESTS 
 	echo "cross arm-softfp build result $?" >> $LOG_FILE
 	time_stamp
 fi
