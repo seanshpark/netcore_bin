@@ -27,4 +27,11 @@ then
 	fi
 fi
 
-$TEST_BASE/runtest.sh --testRootDir="$TEST_ROOT" --testNativeBinDir="$CORECLR/bin/obj/${OS}.${ARCHITECTURE}.${BUILD}/tests" --coreClrBinDir="$CORECLR/bin/Product/${OS}.${ARCHITECTURE}.${BUILD}" --coreFxBinDir="$COREFX/bin/${OS}.AnyCPU.${BUILD}" --coreFxNativeBinDir="$COREFX/bin/${OS}.${ARCHITECTURE}.${BUILD}" $TEST_CASE
+$TEST_BASE/runtest.sh \
+	--testRootDir="$TEST_ROOT" \
+	--testNativeBinDir="$CORECLR/bin/obj/${OS}.${ARCHITECTURE}.${BUILD}/tests" \
+	--coreClrBinDir="$CORECLR/bin/Product/${OS}.${ARCHITECTURE}.${BUILD}" \
+	--mscorlibDir="$CORECLR/bin/Product/${OS}.${ARCHITECTURE}.${BUILD}" \
+	--coreFxBinDir="$COREFX/bin/${OS}.AnyCPU.${BUILD}" \
+	--coreFxNativeBinDir="$COREFX/bin/${OS}.${ARCHITECTURE}.${BUILD}" \
+	$TEST_CASE
