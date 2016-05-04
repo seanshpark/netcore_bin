@@ -47,17 +47,27 @@ function time_stamp
 	date >> $LOG_FILE
 }
 
+function task_stamp
+{
+	echo "" >> $LOG_FILE
+	echo "$1" >> $LOG_FILE
+	echo "BRANCH:$(git branch | grep '^*')" >> $LOG_FILE
+	echo "HASH:$(git log -1 --pretty=%H)" >> $LOG_FILE
+}
+
 function sync
 {
 	BRANCH=$(git -C $1 branch | grep '*' | cut -d' ' -f2-)
 	UPSTREAM=$(git -C $1 remote | grep -v origin)
 
-	echo ">>>> sync [$1] to upstream <<<<"
+	echo "" >> $LOG_FILE
+	echo ">>>> sync [$1] to upstream <<<<" >> $LOG_FILE
 	git -C $1 fetch --all
 	git -C $1 merge $UPSTREAM/$BRANCH
 	git -C $1 push
 	git -C $1 pull --rebase
-	echo
+	echo "BRANCH:$(git branch | grep '^*')" >> $LOG_FILE
+	echo "HASH:$(git log -1 --pretty=%H)" >> $LOG_FILE
 }
 
 function sync_repo 
@@ -174,14 +184,16 @@ done
 #
 if [ "$BUILD_ARM" = "YES" ]
 then
-	echo "[CORECLR - cross arm]" >> $LOG_FILE
 	cd $BASE_PATH/coreclr
+	task_stamp "[CORECLR - cross arm]"
+
 	ROOTFS_DIR=~/arm-rootfs-coreclr/ $TIME ./build.sh $BUILD_TYPE $CLEAN arm cross $VERBOSE $SKIPMSCORLIB #$SKIPTESTS
 	echo "cross arm build result $?" >> $LOG_FILE
 	time_stamp
 
-	echo "[COREFX - cross arm native]" >> $LOG_FILE
 	cd $BASE_PATH/corefx
+	task_stamp "[COREFX - cross arm native]"
+
 	ROOTFS_DIR=~/arm-rootfs-corefx/ $TIME ./build.sh native $BUILD_TYPE $CLEAN arm cross $VERBOSE #$SKIPTESTS
 	echo "cross arm native build result $?" >> $LOG_FILE
 	time_stamp
@@ -192,8 +204,9 @@ fi
 #
 if [ "$BUILD_SOFTFP" = "YES" ]
 then
-	echo "[CORECLR - cross arm-softfp]" >> $LOG_FILE
 	cd $BASE_PATH/coreclr
+	task_stamp "[CORECLR - cross arm-softfp]"
+
 	ROOTFS_DIR=~/arm-softfp-rootfs-coreclr/ $TIME ./build.sh $BUILD_TYPE $CLEAN arm-softfp cross $VERBOSE $SKIPMSCORLIB #$SKIPTESTS 
 	echo "cross arm-softfp build result $?" >> $LOG_FILE
 	time_stamp
@@ -204,14 +217,16 @@ fi
 #
 if [ "$BUILD_HOST" = "YES" ]
 then
-	echo "[CORECLR - host]" >> $LOG_FILE
 	cd $BASE_PATH/coreclr
+	task_stamp "[CORECLR - host]"
+
 	$TIME ./build.sh $BUILD_TYPE $CLEAN $VERBOSE
 	echo "build result $?" >> $LOG_FILE
 	time_stamp
 
-	echo "[COREFX - host]" >> $LOG_FILE
 	cd $BASE_PATH/corefx
+	task_stamp "[COREFX - host]"
+
 	$TIME ./build.sh native $BUILD_TYPE $CLEAN $VERBOSE $SKIPTESTS
 	echo "host build result $?" >> $LOG_FILE
 	time_stamp
@@ -222,8 +237,9 @@ fi
 #
 if [ "$BUILD_MANAGED" = "YES" ]
 then
-	echo "[COREFX - managed]" >> $LOG_FILE
 	cd $BASE_PATH/corefx
+	task_stamp "[COREFX - managed]"
+
 	$TIME ./build.sh managed $BUILD_TYPE $CLEAN $VERBOSE $SKIPTESTS
 	echo "managed build result $?" >> $LOG_FILE
 	time_stamp
@@ -234,8 +250,9 @@ fi
 #
 if [ "$BUILD_CLI" = "YES" ]
 then
-	echo "[CLI]" >> $LOG_FILE
 	cd $BASE_PATH/cli
+	task_stamp "[CLI]"
+
 	$TIME ./build.sh $BUILD_TYPE
 	echo "build result $?" >> $LOG_FILE
 	time_stamp
@@ -246,8 +263,9 @@ fi
 #
 if [ "$BUILD_ROSLYN" = "YES" ]
 then
-	echo "[ROSLYN]" >> $LOG_FILE
 	cd $BASE_PATH/roslyn
+	task_stamp "[ROSLYN]"
+
 	$TIME make
 	echo "build result $?" >> $LOG_FILE
 	time_stamp
