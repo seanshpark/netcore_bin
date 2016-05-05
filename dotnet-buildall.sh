@@ -1,4 +1,4 @@
-#!/bin/bash -x
+#!/bin/bash
 #
 #   Copyright 2016 by Sung-Jae Lee (sjlee@mail.com)
 #
@@ -28,19 +28,21 @@ LOG_FILE="$BASE_PATH/$(basename ${0}).log"
 TIME="time"
 
 #
-# check log file
-#
-if [ -e $LOG_FILE ]
-then
-	rm -f $LOG_FILE
-fi
-
-echo $@ >> $LOG_FILE
-date >> $LOG_FILE
-
-#
 # define functions
 #
+
+function usage
+{
+	echo ''
+	echo "Usage: $(basename $0) [command] [trget] [configuration] [mode] [option]"
+	echo ''
+	echo '      command : update | sync | distclean'
+	echo '       target : all | arm, arm-softfp, host, cli, loslyn, managed'
+	echo 'configuration : debug | release | checked'
+	echo '         mode : quick'
+	echo '       option : clean, verbose, skipmscorlib, skiptests, native-only'
+	echo ''
+}
 
 function time_stamp
 {
@@ -106,6 +108,25 @@ function distclean
 }
 
 #
+# print usage
+#
+if [ $# -eq 0 ]
+then
+	usage
+fi
+
+#
+# check log file
+#
+if [ -e $LOG_FILE ]
+then
+	rm -f $LOG_FILE
+fi
+
+echo $@ >> $LOG_FILE
+date >> $LOG_FILE
+
+#
 # parse command-line options
 #
 while [ -n "$1" ]
@@ -113,7 +134,7 @@ do
 	case $1 in
 		all)
 			BUILD_ARM=YES
-			BUILD_SOFTFP=YES
+			#BUILD_SOFTFP=YES
 			BUILD_HOST=YES
 			BUILD_MANAGED=YES
 			BUILD_CLI=YES
@@ -132,7 +153,7 @@ do
 			BUILD_ARM=YES
 			BUILD_MANAGED=YES
 			;;
-		softfp)
+		arm-softfp)
 			BUILD_SOFTFP=YES
 			BUILD_MANAGED=YES
 			;;
@@ -140,7 +161,7 @@ do
 			BUILD_HOST=YES
 			BUILD_MANAGED=YES
 			;;
-		CLI)
+		cli)
 			BUILD_CLI=YES
 			;;
 		loslyn)
