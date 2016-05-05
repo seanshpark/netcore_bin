@@ -15,14 +15,14 @@ TEST_CASE=
 
 if [ -n "$4" ]
 then
-	TEST_CASE=$TEST_ROOT/$4
-	if [ -d "$TEST_CASE" ]
+	TEST_CASE=$4
+	if [ -f "$TEST_CASE" ]
 	then
-		TEST_CASE="--testDir=$4"
+		TEST_CASE="--testDirFile=$TEST_CASE"
 	else
-		if [ -f "$TEST_CASE" ]
+		if [ -d "$TEST_ROOT/$TEST_CASE" ]
 		then
-			TEST_CASE="--testDirFile=$TEST_ROOT/$4"
+			TEST_CASE="--testDir=$4"
 		fi
 	fi
 fi
