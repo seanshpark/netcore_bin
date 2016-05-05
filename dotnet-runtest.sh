@@ -1,7 +1,9 @@
 #!/bin/bash -x
-OS=$1
-ARCHITECTURE=$2
-BUILD=$3
+TARGET=(${1//./ })
+
+OS=${TARGET[0]}
+ARCHITECTURE=${TARGET[1]}
+BUILD=${TARGET[2]}
 
 HOME=$(echo ~)
 GIT_ROOT=$HOME/git
