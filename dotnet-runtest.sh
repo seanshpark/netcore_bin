@@ -1,16 +1,39 @@
-#!/bin/bash -x
+#!/bin/bash
+
+function usage
+{
+	echo ''
+	echo "Usage: [TEST_SET=Windows_NT.x64.Release] $(basename $0) <target> [option]"
+	echo ''
+	echo 'target : os.architecture.configuration'
+	echo '                    os = Linux | OSX | Windows'
+	echo '          architecture = x64 | x86 | arm64 | arm | arm-softfp'
+	echo '         configuration = debug | release'
+	echo ''
+	echo 'option : <path> of '--testDir=' | <path> of '--testDirFile=' | <options>'
+	echo ''
+}
+
+if [ $# -eq 0 ]
+then
+	usage
+	exit
+fi
+
 TARGET=(${1//./ })
 
 OS=${TARGET[0]}
 ARCHITECTURE=${TARGET[1]}
 BUILD=${TARGET[2]}
 
+
 HOME=$(echo ~)
 GIT_ROOT=$HOME/git
 CORECLR=$GIT_ROOT/coreclr
 COREFX=$GIT_ROOT/corefx
 
-TEST_SET=Windows_NT.x64.Debug
+echo "TEST SET: ${TEST_SET:=Windows_NT.x64.Debug}"
+
 TEST_BASE=$CORECLR/tests
 TEST_ROOT=$CORECLR/bin/tests/$TEST_SET
 TEST_CASE=
