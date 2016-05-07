@@ -22,7 +22,7 @@ SKIPTESTS=skiptests
 #
 # etc.
 #
-BASE_PATH=~/git
+${BASE_PATH:="~/git"}
 LOG_FILE="$BASE_PATH/$(basename ${0}).log"
 #TIME="time -o $LOG_FILE -a"
 TIME="time"
@@ -34,13 +34,13 @@ TIME="time"
 function usage
 {
 	echo ''
-	echo "Usage: $(basename $0) [command] [trget] [configuration] [mode] [option]"
+	echo "Usage: [BASE_PATH=<git_base>] $(basename $0) [command] [trget] [configuration] [mode] [option]"
 	echo ''
 	echo '      command : update | sync | distclean'
-	echo '       target : all | arm, arm-softfp, host, cli, loslyn, managed'
-	echo 'configuration : debug | release | checked'
+	echo '       target : default | all | arm, arm-softfp, host, cli, loslyn, managed'
+	echo 'configuration : (debug) | release | checked'
 	echo '         mode : quick'
-	echo '       option : clean, verbose, skipmscorlib, skiptests, native-only'
+	echo '       option : clean, verbose, skipmscorlib, {(skiptests) | no-skiptests}, native-only'
 	echo ''
 }
 
@@ -132,9 +132,17 @@ date >> $LOG_FILE
 while [ -n "$1" ]
 do
 	case $1 in
+		default)
+			BUILD_ARM=YES
+			BUILD_SOFTFP=
+			BUILD_HOST=YES
+			BUILD_MANAGED=YES
+			BUILD_CLI=
+			BUILD_ROSLYN=
+			;;
 		all)
 			BUILD_ARM=YES
-			#BUILD_SOFTFP=YES
+			BUILD_SOFTFP=YES
 			BUILD_HOST=YES
 			BUILD_MANAGED=YES
 			BUILD_CLI=YES
@@ -172,6 +180,9 @@ do
 			;;
 		skiptests)
 			SKIPTESTS=$1
+			;;
+		no-skiptests)
+			SKIPTESTS=
 			;;
 		debug|release|checked)
 			BUILD_TYPE=$1
@@ -215,7 +226,7 @@ then
 	cd $BASE_PATH/corefx
 	task_stamp "[COREFX - cross arm native]"
 
-	ROOTFS_DIR=~/arm-rootfs-corefx/ $TIME ./build.sh native $BUILD_TYPE $CLEAN arm cross $VERBOSE #$SKIPTESTS
+	ROOTFS_DIR=~/arm-rootfs-corefx/ $TIME ./build.sh native $BUILD_TYPE $CLEAN arm cross $VERBOSE $SKIPTESTS
 	echo "cross arm native build result $?" >> $LOG_FILE
 	time_stamp
 fi
