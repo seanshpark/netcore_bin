@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -x
 #
 #   Copyright 2016 by Sung-Jae Lee (sjlee@mail.com)
 #
@@ -22,7 +22,10 @@ SKIPTESTS=skiptests
 #
 # etc.
 #
-${BASE_PATH:="~/git"}
+if [ -z "$BASE_PATH" ]
+then
+	BASE_PATH=~/git
+fi
 LOG_FILE="$BASE_PATH/$(basename ${0}).log"
 #TIME="time -o $LOG_FILE -a"
 TIME="time"
