@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -x
 
 function usage
 {
@@ -57,6 +57,6 @@ $TEST_BASE/runtest.sh \
 	--testNativeBinDir="$CORECLR/bin/obj/${OS}.${ARCHITECTURE}.${BUILD}/tests" \
 	--coreClrBinDir="$CORECLR/bin/Product/${OS}.${ARCHITECTURE}.${BUILD}" \
 	--mscorlibDir="$CORECLR/bin/Product/${OS}.${ARCHITECTURE}.${BUILD}" \
-	--coreFxBinDir="$COREFX/bin/${OS}.AnyCPU.${BUILD}" \
+	--coreFxBinDir="$COREFX/bin" \
 	--coreFxNativeBinDir="$COREFX/bin/${OS}.${ARCHITECTURE}.${BUILD}" \
 	$TEST_CASE
