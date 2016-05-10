@@ -57,6 +57,6 @@ $TEST_BASE/runtest.sh \
 	--testNativeBinDir="$CORECLR/bin/obj/${OS}.${ARCHITECTURE}.${BUILD}/tests" \
 	--coreClrBinDir="$CORECLR/bin/Product/${OS}.${ARCHITECTURE}.${BUILD}" \
 	--mscorlibDir="$CORECLR/bin/Product/${OS}.${ARCHITECTURE}.${BUILD}" \
-	--coreFxBinDir="$COREFX/bin" \
+	--coreFxBinDir="$COREFX/bin/AnyOS.AnyCPU.${BUILD};$COREFX/bin/Unix.AnyCPU.${BUILD};$COREFX/bin/${OS}.AnyCPU.${BUILD};$COREFX/bin/${OS}.${ARCHITECTURE}.${BUILD};" \
 	--coreFxNativeBinDir="$COREFX/bin/${OS}.${ARCHITECTURE}.${BUILD}" \
 	$TEST_CASE
