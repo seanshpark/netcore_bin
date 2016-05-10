@@ -3,7 +3,7 @@
 function usage
 {
 	echo ''
-	echo "Usage: [TEST_SET=Windows_NT.x64.Release] $(basename $0) <target> [option]"
+	echo "Usage: [BASE_PATH=<git_base>] [TEST_SET=Windows_NT.x64.Release] $(basename $0) <target> [option]"
 	echo ''
 	echo 'target : os.architecture.configuration'
 	echo '                    os = Linux | OSX | Windows'
@@ -26,11 +26,12 @@ OS=${TARGET[0]}
 ARCHITECTURE=${TARGET[1]}
 BUILD=${TARGET[2]}
 
-
-HOME=$(echo ~)
-GIT_ROOT=$HOME/git
-CORECLR=$GIT_ROOT/coreclr
-COREFX=$GIT_ROOT/corefx
+if [ -z "$BASE_PATH" ]
+then
+	BASE_PATH=~/git
+fi
+CORECLR=$BASE_PATH/coreclr
+COREFX=$BASE_PATH/corefx
 
 echo "TEST SET: ${TEST_SET:=Windows_NT.x64.Debug}"
 
