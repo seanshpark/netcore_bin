@@ -98,6 +98,41 @@ function sync_repo
 	time_stamp
 }
 
+function update
+{
+	BRANCH=$(git -C $1 branch | grep '*' | cut -d' ' -f2-)
+	UPSTREAM=$(git -C $1 remote | grep -v origin)
+
+	echo "" >> $LOG_FILE
+	echo ">>>> update [$1] <<<<" >> $LOG_FILE
+	git -C $1 pull --rebase
+	echo "BRANCH:$(git branch | grep '^*')" >> $LOG_FILE
+	echo "HASH:$(git log -1 --pretty=%H)" >> $LOG_FILE
+}
+
+function update_repo 
+{
+	case $# in
+		0)
+			for repo in $(find $BASE_PATH -maxdepth 1 -type d)
+			do
+				if [ -e $repo/.git ]
+				then
+					update $repo
+				fi
+			done
+			;;
+		*)
+			while [ -n "$1" ] && [ -e $1/.git ]
+			do
+				update $1
+				shift
+			done
+			;;
+	esac
+	time_stamp
+}
+
 function distclean 
 {
 	for repo in $(find $BASE_PATH -maxdepth 1 -type d)
@@ -209,6 +244,9 @@ do
 			exit
 			;;
 		update)
+			shift
+			update_repo $@ | tee -a $LOG_FILE
+			exit
 			;;
 	esac
 	shift
