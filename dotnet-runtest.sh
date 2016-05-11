@@ -1,4 +1,4 @@
-#!/bin/bash -x
+#!/bin/bash
 
 function usage
 {
@@ -44,18 +44,16 @@ fi
 
 COMMAND_LINE="$@"
 echo $COMMAND_LINE >> $LOG_FILE
-date >> $LOG_FILE
+date | tee -a $LOG_FILE
 
 if [ -z "$TEST_SET" ]; then
 	TEST_SET=Windows_NT.x64.$BUILD
 fi
 
 echo "TEST SET: $TEST_SET" | tee -a $LOG_FILE
-echo $TEST_SET
 
 TEST_BASE=$CORECLR/bin/tests
 TEST_ROOT=$TEST_BASE/$TEST_SET
-TEST_CASE=
 
 #
 # prepare test
@@ -84,17 +82,33 @@ fi
 #
 # optional parameters
 #
-
-if [ -n "$4" ]; then
-	TEST_CASE=$4
-	if [ -f "$TEST_CASE" ]; then
-		TEST_CASE="--testDirFile=$TEST_CASE"
-	else
-		if [ -d "$TEST_ROOT/$TEST_CASE" ]; then
-			TEST_CASE="--testDir=$4"
-		fi
-	fi
+shift
+if [ -n "$1" ]; then
+	case $1 in
+		--*)
+			TEST_CASE=$1
+			;;
+		*)
+			if [ -f "$TEST_CASE" ]; then
+				TEST_CASE="--testDirFile=$TEST_CASE"
+			else
+				if [ -d "$TEST_ROOT/$TEST_CASE" ]; then
+					TEST_CASE="--testDir=$1"
+				fi
+			fi
+			;;
+	esac
 fi
+
+echo "$CORECLR/tests/runtest.sh" | tee -a $LOG_FILE
+echo "	--testRootDir=$TEST_ROOT" | tee -a $LOG_FILE
+echo "	--testNativeBinDir=$CORECLR/bin/obj/${OS}.${ARCHITECTURE}.${BUILD}/tests" | tee -a $LOG_FILE
+echo "	--coreClrBinDir=$CORECLR/bin/Product/${OS}.${ARCHITECTURE}.${BUILD}" | tee -a $LOG_FILE
+echo "	--mscorlibDir=$CORECLR/bin/Product/${OS}.${ARCHITECTURE}.${BUILD}" | tee -a $LOG_FILE
+echo "	--coreFxBinDir=$COREFX/bin/AnyOS.AnyCPU.${BUILD};$COREFX/bin/Unix.AnyCPU.${BUILD};$COREFX/bin/${OS}.AnyCPU.${BUILD};$COREFX/bin/${OS}.${ARCHITECTURE}.${BUILD};" | tee -a $LOG_FILE
+echo "	--coreFxNativeBinDir=$COREFX/bin/${OS}.${ARCHITECTURE}.${BUILD}" | tee -a $LOG_FILE
+echo "	$TEST_CASE" | tee -a $LOG_FILE
+echo "" | tee -a $LOG_FILE
 
 $CORECLR/tests/runtest.sh \
 	--testRootDir="$TEST_ROOT" \
@@ -106,19 +120,8 @@ $CORECLR/tests/runtest.sh \
 	$TEST_CASE \
 	| tee -a $LOG_FILE
 
-#CMD="$CORECLR/tests/runtest.sh \
-#	--testRootDir="$TEST_ROOT" \
-#	--testNativeBinDir="$CORECLR/bin/obj/${OS}.${ARCHITECTURE}.${BUILD}/tests" \
-#	--coreClrBinDir="$CORECLR/bin/Product/${OS}.${ARCHITECTURE}.${BUILD}" \
-#	--mscorlibDir="$CORECLR/bin/Product/${OS}.${ARCHITECTURE}.${BUILD}" \
-#	--coreFxBinDir="$COREFX/bin/AnyOS.AnyCPU.${BUILD};$COREFX/bin/Unix.AnyCPU.${BUILD};$COREFX/bin/${OS}.AnyCPU.${BUILD};$COREFX/bin/${OS}.${ARCHITECTURE}.${BUILD};" \
-#	--coreFxNativeBinDir="$COREFX/bin/${OS}.${ARCHITECTURE}.${BUILD}" \
-#	$TEST_CASE \
-#	| tee -a $LOG_FILE"
-
-#echo $CMD | tee -a $LOG_FILE
-#eval "$CMD"
+date | tee -a $LOG_FILE
 
 if [ -n "$NOTIFY" ]; then
-	$NOTIFY "$(hostname -s): $(basename $0) $COMMAND_LINE complete!"
+	$NOTIFY "$(hostname -s): $(basename $0) $COMMAND_LINE complete! - $(date)"
 fi
