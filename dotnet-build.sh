@@ -24,8 +24,9 @@ SKIPTESTS=skiptests
 #
 if [ -z "$BASE_PATH" ]
 then
-	BASE_PATH=~/git
+	BASE_PATH=$(pwd)
 fi
+
 LOG_FILE="$BASE_PATH/$(basename ${0}).log"
 #TIME="time -o $LOG_FILE -a"
 TIME="time"
@@ -161,7 +162,8 @@ then
 	rm -f $LOG_FILE
 fi
 
-echo $@ >> $LOG_FILE
+COMMAND_LINE="$@"
+echo $COMMAND_LINE >> $LOG_FILE
 date >> $LOG_FILE
 
 #
@@ -261,14 +263,14 @@ then
 	task_stamp "[CORECLR - cross arm]"
 
 	ROOTFS_DIR=~/arm-rootfs-coreclr/ $TIME ./build.sh $BUILD_TYPE $CLEAN arm cross $VERBOSE $SKIPMSCORLIB #$SKIPTESTS
-	echo "cross arm build result $?" >> $LOG_FILE
+	echo "CROSS ARM build result $?" >> $LOG_FILE
 	time_stamp
 
 	cd $BASE_PATH/corefx
 	task_stamp "[COREFX - cross arm native]"
 
 	ROOTFS_DIR=~/arm-rootfs-corefx/ $TIME ./build.sh native $BUILD_TYPE $CLEAN arm cross $VERBOSE $SKIPTESTS
-	echo "cross arm native build result $?" >> $LOG_FILE
+	echo "CROSS ARM NATIVE build result $?" >> $LOG_FILE
 	time_stamp
 fi
 
@@ -281,7 +283,7 @@ then
 	task_stamp "[CORECLR - cross arm-softfp]"
 
 	ROOTFS_DIR=~/arm-softfp-rootfs-coreclr/ $TIME ./build.sh $BUILD_TYPE $CLEAN arm-softfp cross $VERBOSE $SKIPMSCORLIB #$SKIPTESTS 
-	echo "cross arm-softfp build result $?" >> $LOG_FILE
+	echo "CROSS ARM-SOFTFP build result $?" >> $LOG_FILE
 	time_stamp
 fi
 
@@ -301,7 +303,7 @@ then
 	task_stamp "[COREFX - host]"
 
 	$TIME ./build.sh native $BUILD_TYPE $CLEAN $VERBOSE $SKIPTESTS
-	echo "host build result $?" >> $LOG_FILE
+	echo "HOST build result $?" >> $LOG_FILE
 	time_stamp
 fi
 
@@ -314,7 +316,7 @@ then
 	task_stamp "[COREFX - managed]"
 
 	$TIME ./build.sh managed $BUILD_TYPE $CLEAN $VERBOSE $SKIPTESTS
-	echo "managed build result $?" >> $LOG_FILE
+	echo "MANAGED build result $?" >> $LOG_FILE
 	time_stamp
 fi
 
@@ -327,7 +329,7 @@ then
 	task_stamp "[CLI]"
 
 	$TIME ./build.sh $BUILD_TYPE
-	echo "build result $?" >> $LOG_FILE
+	echo "CLI build result $?" >> $LOG_FILE
 	time_stamp
 fi
 
@@ -340,8 +342,12 @@ then
 	task_stamp "[ROSLYN]"
 
 	$TIME make
-	echo "build result $?" >> $LOG_FILE
+	echo "ROSLYN build result $?" >> $LOG_FILE
 	time_stamp
 fi
 
 date >> $LOG_FILE
+if [ -n "$NOTIFY" ]
+then
+	$NOTIFY "$(hostname -s): $(basename $0) $COMMAND_LINE complete with $?."
+fi
