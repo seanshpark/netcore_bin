@@ -349,5 +349,5 @@ fi
 date >> $LOG_FILE
 if [ -n "$NOTIFY" ]
 then
-	$NOTIFY "$(hostname -s): $(basename $0) $COMMAND_LINE complete with $?."
+    $NOTIFY "$(hostname -s): $(basename $0) $COMMAND_LINE complete with $? - $(date)"
 fi
