@@ -127,5 +127,5 @@ $CORECLR/tests/runtest.sh \
 date | tee -a $LOG_FILE
 
 if [ -n "$NOTIFY" ]; then
-	$NOTIFY "$(hostname -s): $(basename $0) $COMMAND_LINE complete! - $(date)"
+	$NOTIFY "$(hostname -s): $(basename $0) $COMMAND_LINE complete. - $(date)"
 fi
