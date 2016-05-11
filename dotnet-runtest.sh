@@ -82,11 +82,14 @@ fi
 #
 # optional parameters
 #
+TEST_CASE=
+EXTRA_OPTION=
+
 shift
-if [ -n "$1" ]; then
+while [ -n "$1" ]; do
 	case $1 in
 		--*)
-			TEST_CASE=$1
+            EXTRA_OPTION="$EXTRA_OPTION $1"
 			;;
 		*)
 			if [ -f "$TEST_CASE" ]; then
@@ -98,7 +101,8 @@ if [ -n "$1" ]; then
 			fi
 			;;
 	esac
-fi
+    shift
+done
 
 echo "$CORECLR/tests/runtest.sh" | tee -a $LOG_FILE
 echo "	--testRootDir=$TEST_ROOT" | tee -a $LOG_FILE
@@ -107,7 +111,7 @@ echo "	--coreClrBinDir=$CORECLR/bin/Product/${OS}.${ARCHITECTURE}.${BUILD}" | te
 echo "	--mscorlibDir=$CORECLR/bin/Product/${OS}.${ARCHITECTURE}.${BUILD}" | tee -a $LOG_FILE
 echo "	--coreFxBinDir=$COREFX/bin/AnyOS.AnyCPU.${BUILD};$COREFX/bin/Unix.AnyCPU.${BUILD};$COREFX/bin/${OS}.AnyCPU.${BUILD};$COREFX/bin/${OS}.${ARCHITECTURE}.${BUILD};" | tee -a $LOG_FILE
 echo "	--coreFxNativeBinDir=$COREFX/bin/${OS}.${ARCHITECTURE}.${BUILD}" | tee -a $LOG_FILE
-echo "	$TEST_CASE" | tee -a $LOG_FILE
+echo "	$TEST_CASE $EXTRA_OPTION" | tee -a $LOG_FILE
 echo "" | tee -a $LOG_FILE
 
 $CORECLR/tests/runtest.sh \
@@ -117,7 +121,7 @@ $CORECLR/tests/runtest.sh \
 	--mscorlibDir="$CORECLR/bin/Product/${OS}.${ARCHITECTURE}.${BUILD}" \
 	--coreFxBinDir="$COREFX/bin/AnyOS.AnyCPU.${BUILD};$COREFX/bin/Unix.AnyCPU.${BUILD};$COREFX/bin/${OS}.AnyCPU.${BUILD};$COREFX/bin/${OS}.${ARCHITECTURE}.${BUILD};" \
 	--coreFxNativeBinDir="$COREFX/bin/${OS}.${ARCHITECTURE}.${BUILD}" \
-	$TEST_CASE \
+	$TEST_CASE $EXTRA_OPTION \
 	| tee -a $LOG_FILE
 
 date | tee -a $LOG_FILE
