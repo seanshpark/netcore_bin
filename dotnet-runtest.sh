@@ -67,7 +67,7 @@ if [ ! -d $TEST_ROOT ]; then
 	TEST_ARCHIVE=~/${TEST_SET}.${HASH}.zip
 
 	if [ ! -e $TEST_ARCHIVE ]; then
-		HASH=$(ls -t ${TEST_SET} | head -1)
+		TEST_ARCHIVE=~/$(ls -t ~ | grep $TEST_SET | head -1)
 	fi
 
 	if [ ! -e $TEST_ARCHIVE ]; then
@@ -127,5 +127,5 @@ $CORECLR/tests/runtest.sh \
 date | tee -a $LOG_FILE
 
 if [ -n "$NOTIFY" ]; then
-	$NOTIFY "$(hostname -s): $(basename $0) $COMMAND_LINE complete. - $(date)"
+	$NOTIFY \"$(hostname -s): $(basename $0) $COMMAND_LINE complete. - $(date)\"
 fi

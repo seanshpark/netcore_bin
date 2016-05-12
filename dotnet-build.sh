@@ -1,4 +1,4 @@
-#!/bin/bash -x
+#!/bin/bash
 #
 #   Copyright 2016 by Sung-Jae Lee (sjlee@mail.com)
 #
@@ -349,5 +349,5 @@ fi
 date >> $LOG_FILE
 if [ -n "$NOTIFY" ]
 then
-    $NOTIFY "$(hostname -s): $(basename $0) $COMMAND_LINE complete with $? - $(date)"
+    $NOTIFY \"$(hostname -s): $(basename $0) $COMMAND_LINE complete with $? - $(date)\"
 fi
