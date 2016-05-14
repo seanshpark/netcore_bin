@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 #
 #   Copyright 2016 by Sung-Jae Lee (sjlee@mail.com)
 #
@@ -18,7 +18,7 @@ function sync
 
 case $# in
 	0)
-		for repo in $(find . -maxdepth 1 -type d)
+		for repo in $(ls)
 		do
 			if [ -e $repo/.git ]
 			then

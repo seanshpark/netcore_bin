@@ -22,8 +22,7 @@ SKIPTESTS=skiptests
 #
 # etc.
 #
-if [ -z "$BASE_PATH" ]
-then
+if [ -z "$BASE_PATH" ]; then
     BASE_PATH=$(pwd)
 fi
 
@@ -82,7 +81,7 @@ function sync_repo
 {
     case $# in
         0)
-            for repo in $(find $BASE_PATH -maxdepth 1 -type d)
+            for repo in $(ls $BASE_PATH)
             do
                 sync $repo
             done
@@ -116,7 +115,7 @@ function update_repo
 {
     case $# in
         0)
-            for repo in $(find $BASE_PATH -maxdepth 1 -type d)
+            for repo in $(ls $BASE_PATH)
             do
                 update $repo
             done
@@ -134,10 +133,9 @@ function update_repo
 
 function distclean 
 {
-    for repo in $(find $BASE_PATH -maxdepth 1 -type d)
+    for repo in $(ls $BASE_PATH)
     do
-        if [ -e $repo/.git ]
-        then
+        if [ -e $repo/.git ]; then
             git -C $repo clean -xdf
         fi
     done
@@ -147,16 +145,14 @@ function distclean
 #
 # print usage
 #
-if [ $# -eq 0 ]
-then
+if [ $# -eq 0 ]; then
     usage
 fi
 
 #
 # check log file
 #
-if [ -e $LOG_FILE ]
-then
+if [ -e $LOG_FILE ]; then
     rm -f $LOG_FILE
 fi
 
@@ -255,8 +251,7 @@ done
 #
 # build arm native
 #
-if [ "$BUILD_ARM" = "YES" ]
-then
+if [ "$BUILD_ARM" = "YES" ]; then
     cd $BASE_PATH/coreclr
     task_stamp "[CORECLR - cross arm]"
 
@@ -275,8 +270,7 @@ fi
 #
 # build arm-softfp native
 #
-if [ "$BUILD_SOFTFP" = "YES" ]
-then
+if [ "$BUILD_SOFTFP" = "YES" ]; then
     cd $BASE_PATH/coreclr
     task_stamp "[CORECLR - cross arm-softfp]"
 
@@ -288,8 +282,7 @@ fi
 #
 # build host native
 #
-if [ "$BUILD_HOST" = "YES" ]
-then
+if [ "$BUILD_HOST" = "YES" ]; then
     cd $BASE_PATH/coreclr
     task_stamp "[CORECLR - host]"
 
@@ -308,8 +301,7 @@ fi
 #
 # build managed assembly
 #
-if [ "$BUILD_MANAGED" = "YES" ]
-then
+if [ "$BUILD_MANAGED" = "YES" ]; then
     cd $BASE_PATH/corefx
     task_stamp "[COREFX - managed]"
 
@@ -321,8 +313,7 @@ fi
 #
 # build cli
 #
-if [ "$BUILD_CLI" = "YES" ]
-then
+if [ "$BUILD_CLI" = "YES" ]; then
     cd $BASE_PATH/cli
     task_stamp "[CLI]"
 
@@ -334,8 +325,7 @@ fi
 #
 # build roslyn
 #
-if [ "$BUILD_ROSLYN" = "YES" ]
-then
+if [ "$BUILD_ROSLYN" = "YES" ]; then
     cd $BASE_PATH/roslyn
     task_stamp "[ROSLYN]"
 
@@ -345,7 +335,6 @@ then
 fi
 
 date >> $LOG_FILE
-if [ -n "$NOTIFY" ]
-then
+if [ -n "$NOTIFY" ]; then
     $NOTIFY \"$(hostname -s): $(basename $0) $COMMAND_LINE complete with $? - $(date)\"
 fi

@@ -5,8 +5,9 @@ if ! [ -x $OPENGROK ]; then
 	OPENGROK=/opt/local/opengrok/bin/OpenGrok
 fi
 
-for repo in `find . -maxdepth 1 -type d`; do
-	if [ "$repo" != "." ]; then
+for repo in $(ls)
+do
+	if [ -e $repo/.git ]; then
 		git -C $repo pull --rebase
 	fi
 done
