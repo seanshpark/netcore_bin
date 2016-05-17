@@ -76,7 +76,7 @@ if [ ! -d $TEST_ROOT ]; then
 	fi
 
 	echo "Installing test case ${TEST_SET}..."
-	unzip $TEST_ARCHIVE -d $TEST_BASE
+	unzip $TEST_ARCHIVE -d $TEST_BASE/$TEST_SET
 fi
 
 #
@@ -106,7 +106,7 @@ done
 
 echo "$CORECLR/tests/runtest.sh" | tee -a $LOG_FILE
 echo "	--testRootDir=$TEST_ROOT" | tee -a $LOG_FILE
-echo "	--testNativeBinDir=$CORECLR/bin/obj/${OS}.${ARCHITECTURE}.${BUILD}/tests" | tee -a $LOG_FILE
+echo "	--testNativeBinDir=$CORECLR/bin/obj/${OS}.${ARCHITECTURE}.${BUILD}" | tee -a $LOG_FILE
 echo "	--coreClrBinDir=$CORECLR/bin/Product/${OS}.${ARCHITECTURE}.${BUILD}" | tee -a $LOG_FILE
 echo "	--mscorlibDir=$CORECLR/bin/Product/${OS}.${ARCHITECTURE}.${BUILD}" | tee -a $LOG_FILE
 echo "	--coreFxBinDir=$COREFX/bin/${OS}.${ARCHITECTURE}.${BUILD};$COREFX/bin/${OS}.AnyCPU.${BUILD};$COREFX/bin/Unix.AnyCPU.${BUILD};$COREFX/bin/AnyOS.AnyCPU.${BUILD};" | tee -a $LOG_FILE
@@ -116,10 +116,10 @@ echo "" | tee -a $LOG_FILE
 
 $CORECLR/tests/runtest.sh \
 	--testRootDir="$TEST_ROOT" \
-	--testNativeBinDir="$CORECLR/bin/obj/${OS}.${ARCHITECTURE}.${BUILD}/tests" \
+	--testNativeBinDir="$CORECLR/bin/obj/${OS}.${ARCHITECTURE}.${BUILD}" \
 	--coreClrBinDir="$CORECLR/bin/Product/${OS}.${ARCHITECTURE}.${BUILD}" \
 	--mscorlibDir="$CORECLR/bin/Product/${OS}.${ARCHITECTURE}.${BUILD}" \
-	--coreFxBinDir="$COREFX/bin/AnyOS.AnyCPU.${BUILD};$COREFX/bin/Unix.AnyCPU.${BUILD};$COREFX/bin/${OS}.AnyCPU.${BUILD};$COREFX/bin/${OS}.${ARCHITECTURE}.${BUILD};" \
+	--coreFxBinDir="$COREFX/bin/${OS}.${ARCHITECTURE}.${BUILD};$COREFX/bin/${OS}.AnyCPU.${BUILD};$COREFX/bin/Unix.AnyCPU.${BUILD};$COREFX/bin/AnyOS.AnyCPU.${BUILD};" \
 	--coreFxNativeBinDir="$COREFX/bin/${OS}.${ARCHITECTURE}.${BUILD}" \
 	$TEST_CASE $EXTRA_OPTION \
 	| tee -a $LOG_FILE
