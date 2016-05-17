@@ -18,6 +18,7 @@ VERBOSE=
 DISTCLEAN=
 SKIPMSCORLIB=
 SKIPTESTS=skiptests
+SKIPBUILDTESTS=
 
 #
 # etc.
@@ -40,10 +41,10 @@ function usage
     echo "Usage: [BASE_PATH=<git_base>] $(basename $0) [command] [trget] [configuration] [mode] [option]"
     echo ''
     echo '      command : update | sync | distclean'
-    echo '       target : default | all | arm, arm-softfp, host, cli, loslyn, managed'
+    echo '       target : default | all | complete | arm, arm-softfp, host, cli, loslyn, managed'
     echo 'configuration : (debug) | release | checked'
     echo '         mode : quick'
-    echo '       option : clean, verbose, skipmscorlib, {(skiptests) | no-skiptests}, native-only'
+    echo '       option : clean, verbose, skipmscorlib, skipbuildtests {(skiptests) | no-skiptests}, native-only'
     echo ''
 }
 
@@ -173,6 +174,8 @@ do
             BUILD_MANAGED=YES
             BUILD_CLI=
             BUILD_ROSLYN=
+            SKIPBUILDTESTS=
+            SKIPTESTS=skiptests
             ;;
         all)
             BUILD_ARM=YES
@@ -181,15 +184,28 @@ do
             BUILD_MANAGED=YES
             BUILD_CLI=YES
             BUILD_ROSLYN=YES
+            SKIPBUILDTESTS=
+            SKIPTESTS=skiptests
             ;;
-        managed)
+        complete)
+            CLEAN=clean
+            BUILD_ARM=YES
+            BUILD_SOFTFP=YES
+            BUILD_HOST=YES
             BUILD_MANAGED=YES
+            BUILD_CLI=YES
+            BUILD_ROSLYN=YES
+            SKIPBUILDTESTS=
+            SKIPTESTS=
             ;;
         quick)
             CLEAN=
             SKIPMSCORLIB=
             SKIPTESTS=skiptests
-            break
+            SKIPBUILDTESTS=skiptests
+            ;;
+        managed)
+            BUILD_MANAGED=YES
             ;;
         arm)
             BUILD_ARM=YES
@@ -211,6 +227,9 @@ do
             ;;
         skipmscorlib)
             SKIPMSCORLIB=$1
+            ;;
+        skipbuildtests)
+            SKIPBUILDTESTS=skiptests
             ;;
         skiptests)
             SKIPTESTS=$1
@@ -255,7 +274,7 @@ if [ "$BUILD_ARM" = "YES" ]; then
     cd $BASE_PATH/coreclr
     task_stamp "[CORECLR - cross arm]"
 
-    ROOTFS_DIR=~/arm-rootfs-coreclr/ $TIME ./build.sh $BUILD_TYPE $CLEAN arm cross $VERBOSE $SKIPMSCORLIB #$SKIPTESTS
+    ROOTFS_DIR=~/arm-rootfs-coreclr/ $TIME ./build.sh $BUILD_TYPE $CLEAN arm cross $VERBOSE $SKIPMSCORLIB $SKIPBUILDTESTS
     echo "CROSS ARM build result $?" >> $LOG_FILE
     time_stamp
 
@@ -274,9 +293,16 @@ if [ "$BUILD_SOFTFP" = "YES" ]; then
     cd $BASE_PATH/coreclr
     task_stamp "[CORECLR - cross arm-softfp]"
 
-    ROOTFS_DIR=~/arm-softfp-rootfs-coreclr/ $TIME ./build.sh $BUILD_TYPE $CLEAN arm-softfp cross $VERBOSE $SKIPMSCORLIB #$SKIPTESTS 
+    ROOTFS_DIR=~/arm-softfp-rootfs-coreclr/ $TIME ./build.sh $BUILD_TYPE $CLEAN arm-softfp cross $VERBOSE $SKIPMSCORLIB $SKIPBUILDTESTS 
     echo "CROSS ARM-SOFTFP build result $?" >> $LOG_FILE
     time_stamp
+    
+#    cd $BASE_PATH/corefx
+#    task_stamp "[COREFX - cross arm-softfp native]"
+#
+#    ROOTFS_DIR=~/arm-rootfs-corefx/ $TIME ./build.sh native $BUILD_TYPE $CLEAN arm cross $VERBOSE $SKIPTESTS
+#    echo "CROSS ARM NATIVE build result $?" >> $LOG_FILE
+#    time_stamp
 fi
 
 #
@@ -286,12 +312,12 @@ if [ "$BUILD_HOST" = "YES" ]; then
     cd $BASE_PATH/coreclr
     task_stamp "[CORECLR - host]"
 
-    $TIME ./build.sh $BUILD_TYPE $CLEAN $VERBOSE
+    $TIME ./build.sh $BUILD_TYPE $CLEAN $VERBOSE $SKIPTESTS
     echo "build result $?" >> $LOG_FILE
     time_stamp
 
     cd $BASE_PATH/corefx
-    task_stamp "[COREFX - host]"
+    task_stamp "[COREFX - host native]"
 
     $TIME ./build.sh native $BUILD_TYPE $CLEAN $VERBOSE $SKIPTESTS
     echo "HOST build result $?" >> $LOG_FILE
