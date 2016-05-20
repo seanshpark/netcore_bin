@@ -20,6 +20,8 @@ SKIPMSCORLIB=
 SKIPTESTS=skiptests
 SKIPBUILDTESTS=
 
+declare -a RESULT
+
 #
 # etc.
 #
@@ -275,7 +277,8 @@ if [ "$BUILD_ARM" = "YES" ]; then
     task_stamp "[CORECLR - cross arm]"
 
     ROOTFS_DIR=~/arm-rootfs-coreclr/ $TIME ./build.sh $BUILD_TYPE $CLEAN arm cross $VERBOSE $SKIPMSCORLIB $SKIPBUILDTESTS
-    echo "CROSS ARM build result $?" >> $LOG_FILE
+    RESULT=(${RESULT[@]}, $?)
+    echo "CROSS ARM build result $RESULT[#${RESULT}]?" >> $LOG_FILE
     time_stamp
 
     cd $BASE_PATH/corefx
@@ -362,5 +365,6 @@ fi
 
 date >> $LOG_FILE
 if [ -n "$NOTIFY" ]; then
-    $NOTIFY \"$(hostname -s): $(basename $0) $COMMAND_LINE complete with $? - $(date)\"
+    echo "$NOTIFY \"$(hostname -s): $(basename $0) $COMMAND_LINE complete with $? - $(date)\""
+    $NOTIFY "$(hostname -s): $(basename $0) $COMMAND_LINE complete with $? - $(date)"
 fi
