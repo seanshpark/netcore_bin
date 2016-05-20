@@ -76,7 +76,7 @@ if [ ! -d $TEST_ROOT ]; then
 	fi
 
 	echo "Installing test case ${TEST_SET}..."
-	unzip $TEST_ARCHIVE -d $TEST_BASE/$TEST_SET
+	unzip $TEST_ARCHIVE -d $TEST_BASE
 fi
 
 #
