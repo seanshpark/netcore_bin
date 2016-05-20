@@ -20,7 +20,13 @@ SKIPMSCORLIB=
 SKIPTESTS=skiptests
 SKIPBUILDTESTS=
 
-declare -a RESULT
+#
+# print usage
+#
+if [ $# -eq 0 ]; then
+    usage
+    exit
+fi
 
 #
 # etc.
@@ -30,7 +36,6 @@ if [ -z "$BASE_PATH" ]; then
 fi
 
 LOG_FILE="$BASE_PATH/$(basename ${0}).log"
-#TIME="time -o $LOG_FILE -a"
 TIME="time"
 
 #
@@ -42,7 +47,7 @@ function usage
     echo ''
     echo "Usage: [BASE_PATH=<git_base>] $(basename $0) [command] [trget] [configuration] [mode] [option]"
     echo ''
-    echo '      command : update | sync | distclean'
+    echo '      command : update | sync | distclean | version'
     echo '       target : default | all | complete | arm, arm-softfp, host, cli, loslyn, managed'
     echo 'configuration : (debug) | release | checked'
     echo '         mode : quick'
@@ -52,31 +57,35 @@ function usage
 
 function time_stamp
 {
-    date >> $LOG_FILE
+    date | tee -a $LOG_FILE
 }
 
 function task_stamp
 {
-    echo "" >> $LOG_FILE
-    echo "$1" >> $LOG_FILE
-    echo "BRANCH:$(git branch | grep '^*')" >> $LOG_FILE
-    echo "HASH:$(git log -1 --pretty=%H)" >> $LOG_FILE
+    BRANCH=$(git -C $1 branch | grep '^*' | cut -d' ' -f2-)
+    HASH=$(git -C $1 log -1 ---format=%H)
+
+    echo "$1" | tee -a $LOG_FILE
+    echo "BRANCH:$BRANCH" | tee -a $LOG_FILE
+    echo "HASH:$HASH" | tee -a $LOG_FILE
+    echo "" | tee -a $LOG_FILE
 }
 
 function sync
 {
     if [ -e "$1/.git" ]; then
         BRANCH=$(git -C $1 branch | grep '^*' | cut -d' ' -f2-)
+        HASH=$(git -C $1 log -1 --format=%H)
         UPSTREAM=$(git -C $1 remote | grep -v origin)
 
-        echo "" >> $LOG_FILE
-        echo ">>>> sync [$1] to upstream <<<<" >> $LOG_FILE
+        echo ">>>> sync [$1] to upstream <<<<"
         git -C $1 fetch --all
         git -C $1 merge $UPSTREAM/$BRANCH
         git -C $1 push
         git -C $1 pull --rebase
-        echo "BRANCH:$(git -C $1 branch | grep '^*')" >> $LOG_FILE
-        echo "HASH:$(git -C $1 log -1 --pretty=%H)" >> $LOG_FILE
+        echo "BRANCH:$BRANCH"
+        echo "HASH:$HASH"
+        echo ""
     fi
 }
 
@@ -97,7 +106,6 @@ function sync_repo
             done
             ;;
     esac
-    time_stamp
 }
 
 function update
@@ -106,11 +114,11 @@ function update
         BRANCH=$(git -C $1 branch | grep '*' | cut -d' ' -f2-)
         UPSTREAM=$(git -C $1 remote | grep -v origin)
 
-        echo "" >> $LOG_FILE
-        echo ">>>> update [$1] <<<<" >> $LOG_FILE
+        echo ">>>> update [$1] <<<<"
         git -C $1 pull --rebase
-        echo "BRANCH:$(git -C $1 branch | grep '^*')" >> $LOG_FILE
-        echo "HASH:$(git -C $1 log -1 --pretty=%H)" >> $LOG_FILE
+        echo "BRANCH:$BRANCH"
+        echo "HASH:$HASH"
+        echo ""
     fi
 }
 
@@ -131,7 +139,6 @@ function update_repo
             done
             ;;
     esac
-    time_stamp
 }
 
 function distclean 
@@ -142,26 +149,39 @@ function distclean
             git -C $repo clean -xdf
         fi
     done
-    time_stamp
 }
 
-#
-# print usage
-#
-if [ $# -eq 0 ]; then
-    usage
-fi
+function version
+{
+    if [ -e "$1/.git" ]; then
+        BRANCH=$(git -C $1 branch | grep '^*' | cut -d' ' -f2-)
+        HASH=$(git -C $1 log -1 --format=%H)
 
-#
-# check log file
-#
-if [ -e $LOG_FILE ]; then
-    rm -f $LOG_FILE
-fi
+        echo "[$1]"
+        echo "BRANCH:$BRANCH"
+        echo "HASH:$HASH"
+        echo ""
+    fi
+}
 
-COMMAND_LINE="$@"
-echo $COMMAND_LINE >> $LOG_FILE
-date >> $LOG_FILE
+function show_version 
+{
+    case $# in
+        0)
+            for repo in $(ls $BASE_PATH)
+            do
+                version $repo
+            done
+            ;;
+        *)
+            while [ -n "$1" ] && [ -e $1/.git ]
+            do
+                version $1
+                shift
+            done
+            ;;
+    esac
+}
 
 #
 # parse command-line options
@@ -257,17 +277,33 @@ do
             ;;
         sync)
             shift
-            sync_repo $@ | tee -a $LOG_FILE
+            sync_repo $@
             exit
             ;;
         update)
             shift
-            update_repo $@ | tee -a $LOG_FILE
+            update_repo $@
+            exit
+            ;;
+        version)
+            shift
+            show_version $@
             exit
             ;;
     esac
     shift
 done
+
+#
+# check log file
+#
+if [ -e $LOG_FILE ]; then
+    rm -f $LOG_FILE
+fi
+
+COMMAND_LINE="$@"
+echo $COMMAND_LINE | tee -a $LOG_FILE
+date | tee -a $LOG_FILE
 
 #
 # build arm native
@@ -277,15 +313,14 @@ if [ "$BUILD_ARM" = "YES" ]; then
     task_stamp "[CORECLR - cross arm]"
 
     ROOTFS_DIR=~/arm-rootfs-coreclr/ $TIME ./build.sh $BUILD_TYPE $CLEAN arm cross $VERBOSE $SKIPMSCORLIB $SKIPBUILDTESTS
-    RESULT=(${RESULT[@]}, $?)
-    echo "CROSS ARM build result $RESULT[#${RESULT}]?" >> $LOG_FILE
+    echo "CROSS ARM build result $?" | tee -a $LOG_FILE
     time_stamp
 
     cd $BASE_PATH/corefx
     task_stamp "[COREFX - cross arm native]"
 
     ROOTFS_DIR=~/arm-rootfs-corefx/ $TIME ./build.sh native $BUILD_TYPE $CLEAN arm cross $VERBOSE $SKIPTESTS
-    echo "CROSS ARM NATIVE build result $?" >> $LOG_FILE
+    echo "CROSS ARM NATIVE build result $?" | tee -a $LOG_FILE
     time_stamp
 fi
 
@@ -297,14 +332,14 @@ if [ "$BUILD_SOFTFP" = "YES" ]; then
     task_stamp "[CORECLR - cross arm-softfp]"
 
     ROOTFS_DIR=~/arm-softfp-rootfs-coreclr/ $TIME ./build.sh $BUILD_TYPE $CLEAN arm-softfp cross $VERBOSE $SKIPMSCORLIB $SKIPBUILDTESTS 
-    echo "CROSS ARM-SOFTFP build result $?" >> $LOG_FILE
+    echo "CROSS ARM-SOFTFP build result $?" | tee -a $LOG_FILE
     time_stamp
     
 #    cd $BASE_PATH/corefx
 #    task_stamp "[COREFX - cross arm-softfp native]"
 #
 #    ROOTFS_DIR=~/arm-rootfs-corefx/ $TIME ./build.sh native $BUILD_TYPE $CLEAN arm cross $VERBOSE $SKIPTESTS
-#    echo "CROSS ARM NATIVE build result $?" >> $LOG_FILE
+#    echo "CROSS ARM NATIVE build result $?" | tee -a $LOG_FILE
 #    time_stamp
 fi
 
@@ -316,14 +351,14 @@ if [ "$BUILD_HOST" = "YES" ]; then
     task_stamp "[CORECLR - host]"
 
     $TIME ./build.sh $BUILD_TYPE $CLEAN $VERBOSE $SKIPTESTS
-    echo "build result $?" >> $LOG_FILE
+    echo "build result $?" | tee -a $LOG_FILE
     time_stamp
 
     cd $BASE_PATH/corefx
     task_stamp "[COREFX - host native]"
 
     $TIME ./build.sh native $BUILD_TYPE $CLEAN $VERBOSE $SKIPTESTS
-    echo "HOST build result $?" >> $LOG_FILE
+    echo "HOST build result $?" | tee -a $LOG_FILE
     time_stamp
 fi
 
@@ -335,7 +370,7 @@ if [ "$BUILD_MANAGED" = "YES" ]; then
     task_stamp "[COREFX - managed]"
 
     $TIME ./build.sh managed $BUILD_TYPE $CLEAN $VERBOSE $SKIPTESTS
-    echo "MANAGED build result $?" >> $LOG_FILE
+    echo "MANAGED build result $?" | tee -a $LOG_FILE
     time_stamp
 fi
 
@@ -347,7 +382,7 @@ if [ "$BUILD_CLI" = "YES" ]; then
     task_stamp "[CLI]"
 
     $TIME ./build.sh $BUILD_TYPE
-    echo "CLI build result $?" >> $LOG_FILE
+    echo "CLI build result $?" | tee -a $LOG_FILE
     time_stamp
 fi
 
@@ -359,11 +394,11 @@ if [ "$BUILD_ROSLYN" = "YES" ]; then
     task_stamp "[ROSLYN]"
 
     $TIME make
-    echo "ROSLYN build result $?" >> $LOG_FILE
+    echo "ROSLYN build result $?" | tee -a $LOG_FILE
     time_stamp
 fi
 
-date >> $LOG_FILE
+date | tee -a $LOG_FILE
 if [ -n "$NOTIFY" ]; then
     echo "$NOTIFY \"$(hostname -s): $(basename $0) $COMMAND_LINE complete with $? - $(date)\""
     $NOTIFY "$(hostname -s): $(basename $0) $COMMAND_LINE complete with $? - $(date)"
