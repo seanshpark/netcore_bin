@@ -58,17 +58,17 @@ function usage
 function time_stamp
 {
     date | tee -a $LOG_FILE
+    echo "" | tee -a $LOG_FILE
 }
 
 function task_stamp
 {
-    BRANCH=$(git -C $1 branch | grep '^*' | cut -d' ' -f2-)
-    HASH=$(git -C $1 log -1 ---format=%H)
+    BRANCH=$(git branch | grep '^*' | cut -d' ' -f2-)
+    HASH=$(git log -1 --format=%H)
 
     echo "$1" | tee -a $LOG_FILE
     echo "BRANCH:$BRANCH" | tee -a $LOG_FILE
     echo "HASH:$HASH" | tee -a $LOG_FILE
-    echo "" | tee -a $LOG_FILE
 }
 
 function sync
