@@ -10,15 +10,19 @@ BUILD_ARM=
 BUILD_SOFTFP=
 BUILD_HOST=
 BUILD_MANAGED=
+BUILD_TYPE=debug
+BUILD_CORECLR=
+BUILD_COREFX=
 BUILD_CLI=
 BUILD_ROSLYN=
-BUILD_TYPE=debug
 CLEAN=
 VERBOSE=
 DISTCLEAN=
 SKIPMSCORLIB=
 SKIPTESTS=skiptests
 SKIPBUILDTESTS=
+
+COMMAND_LINE="$@"
 
 #
 # print usage
@@ -45,10 +49,11 @@ TIME="time"
 function usage
 {
     echo ''
-    echo "Usage: [BASE_PATH=<git_base>] $(basename $0) [command] [trget] [configuration] [mode] [option]"
+    echo "Usage: [BASE_PATH=<git_base>] $(basename $0) [command] [target] [configuration] [mode] [option]"
     echo ''
     echo '      command : update | sync | distclean | version'
-    echo '       target : default | all | complete | arm, arm-softfp, host, cli, loslyn, managed'
+    echo '       target : default | all | complete | arm | arm-softfp | host'
+    echo '       module : (coreclr) | (corefx) | cli | roslyn'
     echo 'configuration : (debug) | release | checked'
     echo '         mode : quick'
     echo '       option : clean, verbose, skipmscorlib, skipbuildtests {(skiptests) | no-skiptests}, native-only'
@@ -194,6 +199,8 @@ do
             BUILD_SOFTFP=
             BUILD_HOST=YES
             BUILD_MANAGED=YES
+            BUILD_CORECLR=YES
+            BUILD_COREFX=YES
             BUILD_CLI=
             BUILD_ROSLYN=
             SKIPBUILDTESTS=
@@ -204,6 +211,8 @@ do
             BUILD_SOFTFP=YES
             BUILD_HOST=YES
             BUILD_MANAGED=YES
+            BUILD_CORECLR=YES
+            BUILD_COREFX=YES
             BUILD_CLI=YES
             BUILD_ROSLYN=YES
             SKIPBUILDTESTS=
@@ -215,6 +224,8 @@ do
             BUILD_SOFTFP=YES
             BUILD_HOST=YES
             BUILD_MANAGED=YES
+            BUILD_CORECLR=YES
+            BUILD_COREFX=YES
             BUILD_CLI=YES
             BUILD_ROSLYN=YES
             SKIPBUILDTESTS=
@@ -229,6 +240,18 @@ do
         managed)
             BUILD_MANAGED=YES
             ;;
+        coreclr)
+            BUILD_CORECLR=YES
+            ;;
+        corefx)
+            BUILD_COREFX=YES
+            ;;
+        cli)
+            BUILD_CLI=YES
+            ;;
+        roslyn)
+            BUILD_ROSLYN=YES
+            ;;
         arm)
             BUILD_ARM=YES
             BUILD_MANAGED=YES
@@ -240,12 +263,6 @@ do
         host)
             BUILD_HOST=YES
             BUILD_MANAGED=YES
-            ;;
-        cli)
-            BUILD_CLI=YES
-            ;;
-        loslyn)
-            BUILD_ROSLYN=YES
             ;;
         skipmscorlib)
             SKIPMSCORLIB=$1
@@ -294,6 +311,13 @@ do
     shift
 done
 
+if [ -z "$BUILD_CORECLR" -a -z "$BUILD_COREFX" -a -z "$BUILD_CLI" -a -z "$BUILD_ROSLYN" ]; then
+    BUILD_CORECLR=YES
+    BUILD_COREFX=YES
+    BUILD_CLI=
+    BUILD_ROSLYN=
+fi
+
 #
 # check log file
 #
@@ -301,7 +325,6 @@ if [ -e $LOG_FILE ]; then
     rm -f $LOG_FILE
 fi
 
-COMMAND_LINE="$@"
 echo $COMMAND_LINE | tee -a $LOG_FILE
 date | tee -a $LOG_FILE
 
@@ -309,69 +332,83 @@ date | tee -a $LOG_FILE
 # build arm native
 #
 if [ "$BUILD_ARM" = "YES" ]; then
-    cd $BASE_PATH/coreclr
-    task_stamp "[CORECLR - cross arm]"
+    if [ "$BUILD_CORECLR" = "YES" ]; then
+        cd $BASE_PATH/coreclr
+        task_stamp "[CORECLR - cross arm]"
 
-    ROOTFS_DIR=~/arm-rootfs-coreclr/ $TIME ./build.sh $BUILD_TYPE $CLEAN arm cross $VERBOSE $SKIPMSCORLIB $SKIPBUILDTESTS
-    echo "CROSS ARM build result $?" | tee -a $LOG_FILE
-    time_stamp
+        ROOTFS_DIR=~/arm-rootfs-coreclr/ $TIME ./build.sh $BUILD_TYPE $CLEAN arm cross $VERBOSE $SKIPMSCORLIB $SKIPBUILDTESTS
+        echo "CROSS ARM build result $?" | tee -a $LOG_FILE
+        time_stamp
+    fi
 
-    cd $BASE_PATH/corefx
-    task_stamp "[COREFX - cross arm native]"
+    if [ "$BUILD_COREFX" = "YES" ]; then
+        cd $BASE_PATH/corefx
+        task_stamp "[COREFX - cross arm native]"
 
-    ROOTFS_DIR=~/arm-rootfs-corefx/ $TIME ./build.sh native $BUILD_TYPE $CLEAN arm cross $VERBOSE $SKIPTESTS
-    echo "CROSS ARM NATIVE build result $?" | tee -a $LOG_FILE
-    time_stamp
+        ROOTFS_DIR=~/arm-rootfs-corefx/ $TIME ./build.sh native $BUILD_TYPE $CLEAN arm cross $VERBOSE $SKIPTESTS
+        echo "CROSS ARM NATIVE build result $?" | tee -a $LOG_FILE
+        time_stamp
+    fi
 fi
 
 #
 # build arm-softfp native
 #
 if [ "$BUILD_SOFTFP" = "YES" ]; then
-    cd $BASE_PATH/coreclr
-    task_stamp "[CORECLR - cross arm-softfp]"
+    if [ "$BUILD_CORECLR" = "YES" ]; then
+        cd $BASE_PATH/coreclr
+        task_stamp "[CORECLR - cross arm-softfp]"
 
-    ROOTFS_DIR=~/arm-softfp-rootfs-coreclr/ $TIME ./build.sh $BUILD_TYPE $CLEAN arm-softfp cross $VERBOSE $SKIPMSCORLIB $SKIPBUILDTESTS 
-    echo "CROSS ARM-SOFTFP build result $?" | tee -a $LOG_FILE
-    time_stamp
-    
-#    cd $BASE_PATH/corefx
-#    task_stamp "[COREFX - cross arm-softfp native]"
-#
-#    ROOTFS_DIR=~/arm-rootfs-corefx/ $TIME ./build.sh native $BUILD_TYPE $CLEAN arm cross $VERBOSE $SKIPTESTS
-#    echo "CROSS ARM NATIVE build result $?" | tee -a $LOG_FILE
-#    time_stamp
+        ROOTFS_DIR=~/arm-softfp-rootfs-coreclr/ $TIME ./build.sh $BUILD_TYPE $CLEAN arm-softfp cross $VERBOSE $SKIPMSCORLIB $SKIPBUILDTESTS 
+        echo "CROSS ARM-SOFTFP build result $?" | tee -a $LOG_FILE
+        time_stamp
+    fi
+
+#    if [ "$BUILD_COREFX" = "YES" ]; then
+#        cd $BASE_PATH/corefx
+#        task_stamp "[COREFX - cross arm-softfp native]"
+#        
+#        ROOTFS_DIR=~/arm-rootfs-corefx/ $TIME ./build.sh native $BUILD_TYPE $CLEAN arm cross $VERBOSE $SKIPTESTS
+#        echo "CROSS ARM NATIVE build result $?" | tee -a $LOG_FILE
+#        time_stamp
+#    fi
 fi
 
 #
 # build host native
 #
 if [ "$BUILD_HOST" = "YES" ]; then
-    cd $BASE_PATH/coreclr
-    task_stamp "[CORECLR - host]"
+    if [ "$BUILD_CORECLR" = "YES" ]; then
+        cd $BASE_PATH/coreclr
+        task_stamp "[CORECLR - host]"
 
-    $TIME ./build.sh $BUILD_TYPE $CLEAN $VERBOSE $SKIPTESTS
-    echo "build result $?" | tee -a $LOG_FILE
-    time_stamp
+        $TIME ./build.sh $BUILD_TYPE $CLEAN $VERBOSE $SKIPTESTS
+        echo "build result $?" | tee -a $LOG_FILE
+        time_stamp
+    fi
 
-    cd $BASE_PATH/corefx
-    task_stamp "[COREFX - host native]"
+    if [ "$BUILD_COREFX" = "YES" ]; then
+        cd $BASE_PATH/corefx
+        task_stamp "[COREFX - host native]"
 
-    $TIME ./build.sh native $BUILD_TYPE $CLEAN $VERBOSE $SKIPTESTS
-    echo "HOST build result $?" | tee -a $LOG_FILE
-    time_stamp
+        $TIME ./build.sh native $BUILD_TYPE $CLEAN $VERBOSE $SKIPTESTS
+        echo "HOST build result $?" | tee -a $LOG_FILE
+        time_stamp
+    fi
 fi
 
 #
 # build managed assembly
 #
 if [ "$BUILD_MANAGED" = "YES" ]; then
-    cd $BASE_PATH/corefx
-    task_stamp "[COREFX - managed]"
+    if [ "$BUILD_COREFX" = "YES" ]; then
+        cd $BASE_PATH/corefx
+        task_stamp "[COREFX - managed]"
 
-    $TIME ./build.sh managed $BUILD_TYPE $CLEAN $VERBOSE $SKIPTESTS
-    echo "MANAGED build result $?" | tee -a $LOG_FILE
-    time_stamp
+        $TIME ./build.sh managed $BUILD_TYPE $CLEAN $VERBOSE $SKIPTESTS
+        echo "MANAGED build result $?" | tee -a $LOG_FILE
+        time_stamp
+    fi
 fi
 
 #
