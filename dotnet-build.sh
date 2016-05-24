@@ -24,6 +24,20 @@ SKIPBUILDTESTS=
 
 COMMAND_LINE="$@"
 
+function usage
+{
+    echo ''
+    echo "Usage: [BASE_PATH=<git_base>] $(basename $0) {command|target} [module] [configuration] [mode] [option]"
+    echo ''
+    echo '      command : update | sync | distclean | version'
+    echo '       target : default | all | complete | arm | arm-softfp | host'
+    echo '       module : (coreclr) | (corefx) | cli | roslyn'
+    echo 'configuration : (debug) | release | checked'
+    echo '         mode : quick'
+    echo '       option : clean, verbose, skipmscorlib, skipbuildtests {(skiptests) | no-skiptests}, {(managed) | native-only}'
+    echo ''
+}
+
 #
 # print usage
 #
@@ -45,20 +59,6 @@ TIME="time"
 #
 # define functions
 #
-
-function usage
-{
-    echo ''
-    echo "Usage: [BASE_PATH=<git_base>] $(basename $0) [command] [target] [configuration] [mode] [option]"
-    echo ''
-    echo '      command : update | sync | distclean | version'
-    echo '       target : default | all | complete | arm | arm-softfp | host'
-    echo '       module : (coreclr) | (corefx) | cli | roslyn'
-    echo 'configuration : (debug) | release | checked'
-    echo '         mode : quick'
-    echo '       option : clean, verbose, skipmscorlib, skipbuildtests {(skiptests) | no-skiptests}, native-only'
-    echo ''
-}
 
 function time_stamp
 {
