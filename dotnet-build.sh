@@ -117,7 +117,7 @@ function update
 {
     if [ -e "$1/.git" ]; then
         BRANCH=$(git -C $1 branch | grep '*' | cut -d' ' -f2-)
-        UPSTREAM=$(git -C $1 remote | grep -v origin)
+        HASH=$(git -C $1 log -1 --format=%H)
 
         echo ">>>> update [$1] <<<<"
         git -C $1 pull --rebase
