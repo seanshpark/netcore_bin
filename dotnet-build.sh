@@ -10,7 +10,8 @@ BUILD_ARM=
 BUILD_SOFTFP=
 BUILD_ARM64=
 BUILD_HOST=
-BUILD_MANAGED=
+BUILD_NATIVE=YES
+BUILD_MANAGED=YES
 BUILD_TYPE=debug
 BUILD_CORECLR=
 BUILD_COREFX=
@@ -36,7 +37,7 @@ function usage
     echo '       module : (coreclr) | (corefx) | cli | roslyn'
     echo 'configuration : (debug) | release | checked'
     echo '         mode : quick'
-    echo '       option : clean, verbose, skipmscorlib, skipbuildtests {(skiptests) | no-skiptests}, {(managed) | native-only}'
+    echo '       option : clean, verbose, skipmscorlib, skipbuildtests {(skiptests) | no-skiptests}, {native-only | managed-only}'
     echo ''
 }
 
@@ -201,7 +202,6 @@ do
             BUILD_ARM64=
             BUILD_SOFTFP=
             BUILD_HOST=YES
-            BUILD_MANAGED=YES
             BUILD_CORECLR=YES
             BUILD_COREFX=YES
             BUILD_CLI=
@@ -214,7 +214,6 @@ do
             BUILD_ARM64=
             BUILD_SOFTFP=YES
             BUILD_HOST=YES
-            BUILD_MANAGED=YES
             BUILD_CORECLR=YES
             BUILD_COREFX=YES
             BUILD_CLI=YES
@@ -228,7 +227,6 @@ do
             BUILD_ARM64=
             BUILD_SOFTFP=YES
             BUILD_HOST=YES
-            BUILD_MANAGED=YES
             BUILD_CORECLR=YES
             BUILD_COREFX=YES
             BUILD_CLI=YES
@@ -241,9 +239,6 @@ do
             SKIPMSCORLIB=
             SKIPTESTS=skiptests
             SKIPBUILDTESTS=skiptests
-            ;;
-        managed)
-            BUILD_MANAGED=YES
             ;;
         coreclr)
             BUILD_CORECLR=YES
@@ -259,19 +254,15 @@ do
             ;;
         arm)
             BUILD_ARM=YES
-            BUILD_MANAGED=YES
             ;;
         arm-softfp)
             BUILD_SOFTFP=YES
-            BUILD_MANAGED=YES
             ;;
         arm64)
             BUILD_ARM64=YES
-            BUILD_MANAGED=YES
             ;;
         host)
             BUILD_HOST=YES
-            BUILD_MANAGED=YES
             ;;
         skipmscorlib)
             SKIPMSCORLIB=$1
@@ -290,6 +281,9 @@ do
             ;;
         native-only)
             BUILD_MANAGED=
+            ;;
+        managed-only)
+            BUILD_NATIVE=
             ;;
         clean)
             CLEAN=$1
@@ -344,95 +338,97 @@ fi
 echo $COMMAND_LINE | tee -a $LOG_FILE
 date | tee -a $LOG_FILE
 
-#
-# build arm native
-#
-if [ "$BUILD_ARM" = "YES" ]; then
-    if [ "$BUILD_CORECLR" = "YES" ]; then
-        cd $BASE_PATH/coreclr
-        task_stamp "[CORECLR - cross arm native]"
+if [ "$BUILD_NATIVE" = "YES" ]; then
+    #
+    # build arm native
+    #
+    if [ "$BUILD_ARM" = "YES" ]; then
+        if [ "$BUILD_CORECLR" = "YES" ]; then
+            cd $BASE_PATH/coreclr
+            task_stamp "[CORECLR - cross arm native]"
 
-        ROOTFS_DIR=~/arm-rootfs-coreclr/ $TIME ./build.sh $BUILD_TYPE $CLEAN arm cross $VERBOSE $SKIPMSCORLIB $SKIPBUILDTESTS $STRIPPED_EXTRA_OPTIONS
-        echo "CORECLR CROSS ARM NATIVE build result $?" | tee -a $LOG_FILE
-        time_stamp
+            ROOTFS_DIR=~/arm-rootfs-coreclr/ $TIME ./build.sh $BUILD_TYPE $CLEAN arm cross $VERBOSE $SKIPMSCORLIB $SKIPBUILDTESTS $STRIPPED_EXTRA_OPTIONS
+            echo "CORECLR CROSS ARM NATIVE build result $?" | tee -a $LOG_FILE
+            time_stamp
+        fi
+
+        if [ "$BUILD_COREFX" = "YES" ]; then
+            cd $BASE_PATH/corefx
+            task_stamp "[COREFX - cross arm native]"
+
+            ROOTFS_DIR=~/arm-rootfs-corefx/ $TIME ./build.sh native $BUILD_TYPE $CLEAN arm cross $VERBOSE $SKIPTESTS $EXTRA_OPTIONS
+            echo "COREFX CROSS ARM NATIVE build result $?" | tee -a $LOG_FILE
+            time_stamp
+        fi
     fi
 
-    if [ "$BUILD_COREFX" = "YES" ]; then
-        cd $BASE_PATH/corefx
-        task_stamp "[COREFX - cross arm native]"
+    #
+    # build arm-softfp native
+    #
+    if [ "$BUILD_SOFTFP" = "YES" ]; then
+        if [ "$BUILD_CORECLR" = "YES" ]; then
+            cd $BASE_PATH/coreclr
+            task_stamp "[CORECLR - cross arm-softfp native]"
 
-        ROOTFS_DIR=~/arm-rootfs-corefx/ $TIME ./build.sh native $BUILD_TYPE $CLEAN arm cross $VERBOSE $SKIPTESTS $EXTRA_OPTIONS
-        echo "COREFX CROSS ARM NATIVE build result $?" | tee -a $LOG_FILE
-        time_stamp
-    fi
-fi
+            ROOTFS_DIR=~/arm-softfp-rootfs-coreclr/ $TIME ./build.sh $BUILD_TYPE $CLEAN arm-softfp cross $VERBOSE $SKIPMSCORLIB $SKIPBUILDTESTS $STRIPPED_EXTRA_OPTIONS
+            echo "CORECLR CROSS ARM-SOFTFP NATIVE build result $?" | tee -a $LOG_FILE
+            time_stamp
+        fi
 
-#
-# build arm-softfp native
-#
-if [ "$BUILD_SOFTFP" = "YES" ]; then
-    if [ "$BUILD_CORECLR" = "YES" ]; then
-        cd $BASE_PATH/coreclr
-        task_stamp "[CORECLR - cross arm-softfp native]"
-
-        ROOTFS_DIR=~/arm-softfp-rootfs-coreclr/ $TIME ./build.sh $BUILD_TYPE $CLEAN arm-softfp cross $VERBOSE $SKIPMSCORLIB $SKIPBUILDTESTS $STRIPPED_EXTRA_OPTIONS
-        echo "CORECLR CROSS ARM-SOFTFP NATIVE build result $?" | tee -a $LOG_FILE
-        time_stamp
-    fi
-
-#    if [ "$BUILD_COREFX" = "YES" ]; then
-#        cd $BASE_PATH/corefx
-#        task_stamp "[COREFX - cross arm-softfp native]"
-#        
-#        ROOTFS_DIR=~/arm-rootfs-corefx/ $TIME ./build.sh native $BUILD_TYPE $CLEAN arm cross $VERBOSE $SKIPTESTS $EXTRA_OPTIONS
-#        echo "COREFX CROSS ARM NATIVE build result $?" | tee -a $LOG_FILE
-#        time_stamp
-#    fi
-fi
-
-#
-# build arm64 native
-#
-if [ "$BUILD_ARM64" = "YES" ]; then
-    if [ "$BUILD_CORECLR" = "YES" ]; then
-        cd $BASE_PATH/coreclr
-        task_stamp "[CORECLR - cross arm64 native]"
-
-        ROOTFS_DIR=~/arm64-rootfs-coreclr/ $TIME ./build.sh $BUILD_TYPE $CLEAN arm64 cross $VERBOSE $SKIPMSCORLIB $SKIPBUILDTESTS $STRIPPED_EXTRA_OPTIONS
-        echo "CORECLR CROSS ARM64 NATIVE build result $?" | tee -a $LOG_FILE
-        time_stamp
+#        if [ "$BUILD_COREFX" = "YES" ]; then
+#            cd $BASE_PATH/corefx
+#            task_stamp "[COREFX - cross arm-softfp native]"
+#            
+#            ROOTFS_DIR=~/arm-rootfs-corefx/ $TIME ./build.sh native $BUILD_TYPE $CLEAN arm cross $VERBOSE $SKIPTESTS $EXTRA_OPTIONS
+#            echo "COREFX CROSS ARM NATIVE build result $?" | tee -a $LOG_FILE
+#            time_stamp
+#        fi
     fi
 
-#    if [ "$BUILD_COREFX" = "YES" ]; then
-#        cd $BASE_PATH/corefx
-#        task_stamp "[COREFX - cross arm64 native]"
-#
-#        ROOTFS_DIR=~/arm64-rootfs-corefx/ $TIME ./build.sh native $BUILD_TYPE $CLEAN arm cross $VERBOSE $SKIPTESTS $EXTRA_OPTIONS
-#        echo "COREFX CROSS ARM64 NATIVE build result $?" | tee -a $LOG_FILE
-#        time_stamp
-#    fi
-fi
+    #
+    # build arm64 native
+    #
+    if [ "$BUILD_ARM64" = "YES" ]; then
+        if [ "$BUILD_CORECLR" = "YES" ]; then
+            cd $BASE_PATH/coreclr
+            task_stamp "[CORECLR - cross arm64 native]"
 
-#
-# build host native
-#
-if [ "$BUILD_HOST" = "YES" ]; then
-    if [ "$BUILD_CORECLR" = "YES" ]; then
-        cd $BASE_PATH/coreclr
-        task_stamp "[CORECLR - host native]"
+            ROOTFS_DIR=~/arm64-rootfs-coreclr/ $TIME ./build.sh $BUILD_TYPE $CLEAN arm64 cross $VERBOSE $SKIPMSCORLIB $SKIPBUILDTESTS $STRIPPED_EXTRA_OPTIONS
+            echo "CORECLR CROSS ARM64 NATIVE build result $?" | tee -a $LOG_FILE
+            time_stamp
+        fi
 
-        $TIME ./build.sh $BUILD_TYPE $CLEAN $VERBOSE $SKIPTESTS $STRIPPED_EXTRA_OPTIONS
-        echo "CORECLR HOST NATIVE build result $?" | tee -a $LOG_FILE
-        time_stamp
+#        if [ "$BUILD_COREFX" = "YES" ]; then
+#            cd $BASE_PATH/corefx
+#            task_stamp "[COREFX - cross arm64 native]"
+#    
+#            ROOTFS_DIR=~/arm64-rootfs-corefx/ $TIME ./build.sh native $BUILD_TYPE $CLEAN arm cross $VERBOSE $SKIPTESTS $EXTRA_OPTIONS
+#            echo "COREFX CROSS ARM64 NATIVE build result $?" | tee -a $LOG_FILE
+#            time_stamp
+#        fi
     fi
 
-    if [ "$BUILD_COREFX" = "YES" ]; then
-        cd $BASE_PATH/corefx
-        task_stamp "[COREFX - host native]"
+    #
+    # build host native
+    #
+    if [ "$BUILD_HOST" = "YES" ]; then
+        if [ "$BUILD_CORECLR" = "YES" ]; then
+            cd $BASE_PATH/coreclr
+            task_stamp "[CORECLR - host native]"
 
-        $TIME ./build.sh native $BUILD_TYPE $CLEAN $VERBOSE $SKIPTESTS $EXTRA_OPTIONS
-        echo "COREFX HOST NATIVE build result $?" | tee -a $LOG_FILE
-        time_stamp
+            $TIME ./build.sh $BUILD_TYPE $CLEAN $VERBOSE $SKIPTESTS $STRIPPED_EXTRA_OPTIONS
+            echo "CORECLR HOST NATIVE build result $?" | tee -a $LOG_FILE
+            time_stamp
+        fi
+
+        if [ "$BUILD_COREFX" = "YES" ]; then
+            cd $BASE_PATH/corefx
+            task_stamp "[COREFX - host native]"
+
+            $TIME ./build.sh native $BUILD_TYPE $CLEAN $VERBOSE $SKIPTESTS $EXTRA_OPTIONS
+            echo "COREFX HOST NATIVE build result $?" | tee -a $LOG_FILE
+            time_stamp
+        fi
     fi
 fi
 
