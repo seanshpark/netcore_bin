@@ -8,7 +8,7 @@ function usage
 	echo 'target : os.architecture.configuration'
 	echo '                    os = Linux | OSX | Windows'
 	echo '          architecture = x64 | x86 | arm64 | arm | arm-softfp'
-	echo '         configuration = debug | release'
+	echo '         configuration = Debug | Release'
 	echo ''
 	echo 'option : <path> of '--testDir=' | <path> of '--testDirFile=' | <options>'
 	echo ''
