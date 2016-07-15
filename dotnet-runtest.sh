@@ -106,7 +106,7 @@ done
 
 echo "$CORECLR/tests/runtest.sh" | tee -a $LOG_FILE
 echo "	--testRootDir=$TEST_ROOT" | tee -a $LOG_FILE
-echo "	--testNativeBinDir=$CORECLR/bin/obj/${OS}.${ARCHITECTURE}.${BUILD}" | tee -a $LOG_FILE
+echo "	--testNativeBinDir=$CORECLR/bin/obj/${OS}.${ARCHITECTURE}.${BUILD}/tests" | tee -a $LOG_FILE
 echo "	--coreClrBinDir=$CORECLR/bin/Product/${OS}.${ARCHITECTURE}.${BUILD}" | tee -a $LOG_FILE
 echo "	--mscorlibDir=$CORECLR/bin/Product/${OS}.${ARCHITECTURE}.${BUILD}" | tee -a $LOG_FILE
 echo "	--coreFxBinDir=$COREFX/bin/${OS}.${ARCHITECTURE}.${BUILD};$COREFX/bin/${OS}.AnyCPU.${BUILD};$COREFX/bin/Unix.AnyCPU.${BUILD};$COREFX/bin/AnyOS.AnyCPU.${BUILD};" | tee -a $LOG_FILE
@@ -116,7 +116,7 @@ echo "" | tee -a $LOG_FILE
 
 $CORECLR/tests/runtest.sh \
 	--testRootDir="$TEST_ROOT" \
-	--testNativeBinDir="$CORECLR/bin/obj/${OS}.${ARCHITECTURE}.${BUILD}" \
+	--testNativeBinDir="$CORECLR/bin/obj/${OS}.${ARCHITECTURE}.${BUILD}/tests" \
 	--coreClrBinDir="$CORECLR/bin/Product/${OS}.${ARCHITECTURE}.${BUILD}" \
 	--mscorlibDir="$CORECLR/bin/Product/${OS}.${ARCHITECTURE}.${BUILD}" \
 	--coreFxBinDir="$COREFX/bin/${OS}.${ARCHITECTURE}.${BUILD};$COREFX/bin/${OS}.AnyCPU.${BUILD};$COREFX/bin/Unix.AnyCPU.${BUILD};$COREFX/bin/AnyOS.AnyCPU.${BUILD};" \
