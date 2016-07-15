@@ -416,7 +416,7 @@ if [ "$BUILD_NATIVE" = "YES" ]; then
             cd $BASE_PATH/coreclr
             task_stamp "[CORECLR - host native]"
 
-            $TIME ./build.sh $BUILD_TYPE $CLEAN $VERBOSE $SKIPTESTS $STRIPPED_EXTRA_OPTIONS
+            $TIME ./build.sh $BUILD_TYPE $CLEAN $VERBOSE $SKIPBUILDTESTS $STRIPPED_EXTRA_OPTIONS
             echo "CORECLR HOST NATIVE build result $?" | tee -a $LOG_FILE
             time_stamp
         fi
