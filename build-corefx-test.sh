@@ -3,7 +3,7 @@
 function usage
 {
     echo ''
-    echo "Usage: [BASE_PATH=<git_base>] [TEST_ROOT=./corefx-<target>-test] $(basename $0) <target> [option]"
+    echo "Usage: [BASE_PATH=<git_base>] [TEST_ROOT=./corefx-<target>-test] $(basename $0) <target>"
     echo ''
     echo 'target : os.architecture.configuration'
     echo '                    os = Linux | OSX | Windows'
@@ -33,18 +33,70 @@ if [ -z "$TEST_ROOT" ]; then
     TEST_ROOT=./corefx-${OS}.${ARCHITECTURE}.${BUILD}-test
 fi
 
-#CORECLR_BIN=$TEST_ROOT/coreclr/bin/Product/${OS}.${ARCHITECTURE}.${BUILD}
+mkdir -p "$TEST_ROOT"
+
 CORECLR_BIN=$TEST_ROOT/coreclr/bin/Product
 TESTS=$TEST_ROOT/corefx/bin/tests
-#COREFX_NATIVE=$TEST_ROOT/corefx/bin/${OS}.${ARCHITECTURE}.${BUILD}/Native
 COREFX_NATIVE=$TEST_ROOT/corefx/bin/${OS}.${ARCHITECTURE}.${BUILD}
-#PACKAGES=$TEST_ROOT/corefx/packages
 PACKAGES=$TEST_ROOT/corefx
+TEST_SCRIPT=$TEST_ROOT/run-corefx-test.sh
 
-mkdir -p $CORECLR_BIN
-mkdir -p $TESTS
-mkdir -p $COREFX_NATIVE
-mkdir -p $PACKAGES
+function generate_test_runner_script
+{
+    cat <<END > $TEST_SCRIPT
+#!/bin/bash
+
+function usage
+{
+    echo ''
+    echo "Usage: [CORECLR_BINS=./coreclr/bin/Product/${OS}.${ARCHITECTURE}.${BUILD}] \$(basename \$0) {Debug|Release}"
+    echo ''
+}
+
+if [ \$# -eq 0 ]; then
+    usage
+    exit
+fi
+
+#
+# parse command-line options
+#
+while [ -n "\$1" ]
+do
+    case \$1 in
+        Debug|Release)
+            TEST_CONFIGURATION=\$1
+            ;;
+        *)
+            usage
+            exit
+            ;;
+    esac
+    shift
+done
+
+BASE_PATH=\$(pwd)
+
+./run-test.sh \
+--sequential \
+--configurationGroup \${TEST_CONFIGURATION} \
+--coreclr-bins \$BASE_PATH/coreclr/bin/Product/${OS}.${ARCHITECTURE}.${BUILD} \
+--mscorlib-bins \$BASE_PATH/coreclr/bin/Product/${OS}.${ARCHITECTURE}.${BUILD} \
+--corefx-tests \$BASE_PATH/corefx/bin/tests \
+--corefx-native-bins \$BASE_PATH/corefx/bin/${OS}.${ARCHITECTURE}.${BUILD} \
+--corefx-packages \$BASE_PATH/corefx/packages \
+| tee \$BASE_PATH/${TEST_ROOT}.log
+END
+
+    chmod 775 $TEST_SCRIPT
+}
+
+generate_test_runner_script
+
+mkdir -p "$CORECLR_BIN"
+mkdir -p "$TESTS"
+mkdir -p "$COREFX_NATIVE"
+mkdir -p "$PACKAGES"
 
 cp -a $BASE_PATH/coreclr/bin/Product/${OS}.${ARCHITECTURE}.${BUILD} $CORECLR_BIN
 cp -a $BASE_PATH/corefx/bin/tests/*.${BUILD} $TESTS
