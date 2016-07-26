@@ -356,7 +356,7 @@ if [ "$BUILD_NATIVE" = "YES" ]; then
             cd $BASE_PATH/corefx
             task_stamp "[COREFX - cross arm native]"
 
-            ROOTFS_DIR=~/arm-rootfs-corefx/ $TIME ./build.sh native $BUILD_TYPE $CLEAN arm cross $VERBOSE $SKIPTESTS $EXTRA_OPTIONS
+            ROOTFS_DIR=~/arm-rootfs-corefx/ $TIME ./build.sh native $BUILD_TYPE $CLEAN arm cross $VERBOSE $SKIPTESTS $EXTRA_OPTIONS /p:TestWithoutNativeImages=true
             echo "COREFX CROSS ARM NATIVE build result $?" | tee -a $LOG_FILE
             time_stamp
         fi
@@ -379,7 +379,7 @@ if [ "$BUILD_NATIVE" = "YES" ]; then
             cd $BASE_PATH/corefx
             task_stamp "[COREFX - cross arm-softfp native]"
             
-            ROOTFS_DIR=~/arm-softfp-rootfs-corefx/ $TIME ./build.sh native $BUILD_TYPE $CLEAN arm-softfp cross $VERBOSE $SKIPTESTS $EXTRA_OPTIONS
+            ROOTFS_DIR=~/arm-softfp-rootfs-corefx/ $TIME ./build.sh native $BUILD_TYPE $CLEAN arm-softfp cross $VERBOSE $SKIPTESTS $EXTRA_OPTIONS /p:TestWithoutNativeImages=true
             echo "COREFX CROSS ARM-SOFTFP NATIVE build result $?" | tee -a $LOG_FILE
             time_stamp
         fi
@@ -402,7 +402,7 @@ if [ "$BUILD_NATIVE" = "YES" ]; then
 #            cd $BASE_PATH/corefx
 #            task_stamp "[COREFX - cross arm64 native]"
 #    
-#            ROOTFS_DIR=~/arm64-rootfs-corefx/ $TIME ./build.sh native $BUILD_TYPE $CLEAN arm cross $VERBOSE $SKIPTESTS $EXTRA_OPTIONS
+#            ROOTFS_DIR=~/arm64-rootfs-corefx/ $TIME ./build.sh native $BUILD_TYPE $CLEAN arm64 cross $VERBOSE $SKIPTESTS $EXTRA_OPTIONS /p:TestWithoutNativeImages=true
 #            echo "COREFX CROSS ARM64 NATIVE build result $?" | tee -a $LOG_FILE
 #            time_stamp
 #        fi
@@ -440,7 +440,11 @@ if [ "$BUILD_MANAGED" = "YES" ]; then
         cd $BASE_PATH/corefx
         task_stamp "[COREFX - managed]"
 
-        $TIME ./build.sh managed $BUILD_TYPE $CLEAN $VERBOSE $SKIPTESTS $EXTRA_OPTIONS
+        if [ "$BUILD_ARM" = "YES" ] || [ "$BUILD_SOFTFP" = "YES" ] || [ "$BUILD_ARM64" = "YES" ]; then
+            $TIME ./build.sh managed $BUILD_TYPE $CLEAN $VERBOSE $SKIPTESTS $EXTRA_OPTIONS /p:TestWithoutNativeImages=true
+        else
+            $TIME ./build.sh managed $BUILD_TYPE $CLEAN $VERBOSE $SKIPTESTS $EXTRA_OPTIONS
+        fi
         echo "COREFX MANAGED build result $?" | tee -a $LOG_FILE
         time_stamp
     fi
