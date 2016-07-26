@@ -375,14 +375,14 @@ if [ "$BUILD_NATIVE" = "YES" ]; then
             time_stamp
         fi
 
-#        if [ "$BUILD_COREFX" = "YES" ]; then
-#            cd $BASE_PATH/corefx
-#            task_stamp "[COREFX - cross arm-softfp native]"
-#            
-#            ROOTFS_DIR=~/arm-rootfs-corefx/ $TIME ./build.sh native $BUILD_TYPE $CLEAN arm cross $VERBOSE $SKIPTESTS $EXTRA_OPTIONS
-#            echo "COREFX CROSS ARM NATIVE build result $?" | tee -a $LOG_FILE
-#            time_stamp
-#        fi
+        if [ "$BUILD_COREFX" = "YES" ]; then
+            cd $BASE_PATH/corefx
+            task_stamp "[COREFX - cross arm-softfp native]"
+            
+            ROOTFS_DIR=~/arm-softfp-rootfs-corefx/ $TIME ./build.sh native $BUILD_TYPE $CLEAN arm-softfp cross $VERBOSE $SKIPTESTS $EXTRA_OPTIONS
+            echo "COREFX CROSS ARM-SOFTFP NATIVE build result $?" | tee -a $LOG_FILE
+            time_stamp
+        fi
     fi
 
     #
