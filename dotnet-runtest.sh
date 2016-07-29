@@ -3,14 +3,14 @@
 function usage
 {
 	echo ''
-	echo "Usage: [BASE_PATH=<git_base>] [TEST_SET=Windows_NT.x64.Release] $(basename $0) <target> [option]"
+	echo "Usage: [BASE_PATH=<git_base>] [TEST_SET=Windows_NT.x86.{configuration}] $(basename $0) <target> [option]"
 	echo ''
 	echo 'target : os.architecture.configuration'
 	echo '                    os = Linux | OSX | Windows'
 	echo '          architecture = x64 | x86 | arm64 | arm | arm-softfp'
 	echo '         configuration = Debug | Release'
 	echo ''
-	echo 'option : <path> of '--testDir=' | <path> of '--testDirFile=' | <options>'
+	echo 'option : <path> of '--testDir=' | <path> of '--testDirFile=' | --build-overlay-only | <options>'
 	echo ''
 }
 
@@ -47,7 +47,7 @@ echo $COMMAND_LINE >> $LOG_FILE
 date | tee -a $LOG_FILE
 
 if [ -z "$TEST_SET" ]; then
-	TEST_SET=Windows_NT.x64.$BUILD
+	TEST_SET=Windows_NT.x86.$BUILD
 fi
 
 echo "TEST SET: $TEST_SET" | tee -a $LOG_FILE
