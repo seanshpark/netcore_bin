@@ -27,6 +27,8 @@ EXTRA_OPTIONS=
 
 COMMAND_LINE="$@"
 
+RESULT=
+
 function usage
 {
     echo ''
@@ -82,15 +84,24 @@ function task_stamp
 function sync
 {
     if [ -e "$1/.git" ]; then
-        BRANCH=$(git -C $1 branch | grep '^*' | cut -d' ' -f2-)
-        HASH=$(git -C $1 log -1 --format=%H)
         UPSTREAM=$(git -C $1 remote | grep -v origin)
+        BRANCH=$(git -C $1 branch | grep '^*' | cut -d' ' -f2-)
 
-        echo ">>>> sync [$1] to upstream <<<<"
+        echo ">>>> sync [$1] branch [master] to [$UPSTREAM/master] <<<<"
+        git -C $1 checkout master
         git -C $1 fetch --all
-        git -C $1 merge $UPSTREAM/$BRANCH
+        git -C $1 merge $UPSTREAM/master
         git -C $1 push
         git -C $1 pull --rebase
+
+        HASH=$(git -C $1 log -1 --format=%H)
+        echo "BRANCH:master"
+        echo "HASH:$HASH"
+
+        echo ""
+        echo "checkout [$1] branch [$BRANCH]"
+        git -C $1 checkout $BRANCH
+        HASH=$(git -C $1 log -1 --format=%H)
         echo "BRANCH:$BRANCH"
         echo "HASH:$HASH"
         echo ""
@@ -348,8 +359,10 @@ if [ "$BUILD_NATIVE" = "YES" ]; then
             task_stamp "[CORECLR - cross arm native]"
 
             ROOTFS_DIR=~/arm-rootfs-coreclr/ $TIME ./build.sh $BUILD_TYPE $CLEAN arm cross $VERBOSE $SKIPMSCORLIB $SKIPBUILDTESTS $STRIPPED_EXTRA_OPTIONS
+            RESULT="${RESULT}-$?"
             echo "CORECLR CROSS ARM NATIVE build result $?" | tee -a $LOG_FILE
             time_stamp
+
         fi
 
         if [ "$BUILD_COREFX" = "YES" ]; then
@@ -357,6 +370,7 @@ if [ "$BUILD_NATIVE" = "YES" ]; then
             task_stamp "[COREFX - cross arm native]"
 
             ROOTFS_DIR=~/arm-rootfs-corefx/ $TIME ./build.sh native $BUILD_TYPE $CLEAN arm cross $VERBOSE $SKIPTESTS $EXTRA_OPTIONS /p:TestWithoutNativeImages=true
+            RESULT="${RESULT}-$?"
             echo "COREFX CROSS ARM NATIVE build result $?" | tee -a $LOG_FILE
             time_stamp
         fi
@@ -371,6 +385,7 @@ if [ "$BUILD_NATIVE" = "YES" ]; then
             task_stamp "[CORECLR - cross arm-softfp native]"
 
             ROOTFS_DIR=~/arm-softfp-rootfs-coreclr/ $TIME ./build.sh $BUILD_TYPE $CLEAN arm-softfp cross $VERBOSE $SKIPMSCORLIB $SKIPBUILDTESTS $STRIPPED_EXTRA_OPTIONS
+            RESULT="${RESULT}-$?"
             echo "CORECLR CROSS ARM-SOFTFP NATIVE build result $?" | tee -a $LOG_FILE
             time_stamp
         fi
@@ -380,6 +395,7 @@ if [ "$BUILD_NATIVE" = "YES" ]; then
             task_stamp "[COREFX - cross arm-softfp native]"
             
             ROOTFS_DIR=~/arm-softfp-rootfs-corefx/ $TIME ./build.sh native $BUILD_TYPE $CLEAN arm-softfp cross $VERBOSE $SKIPTESTS $EXTRA_OPTIONS /p:TestWithoutNativeImages=true
+            RESULT="${RESULT}-$?"
             echo "COREFX CROSS ARM-SOFTFP NATIVE build result $?" | tee -a $LOG_FILE
             time_stamp
         fi
@@ -394,6 +410,8 @@ if [ "$BUILD_NATIVE" = "YES" ]; then
             task_stamp "[CORECLR - cross arm64 native]"
 
             ROOTFS_DIR=~/arm64-rootfs-coreclr/ $TIME ./build.sh $BUILD_TYPE $CLEAN arm64 cross $VERBOSE $SKIPMSCORLIB $SKIPBUILDTESTS $STRIPPED_EXTRA_OPTIONS
+            RESULT="${RESULT}-$?"
+            RESULT="${RESULT}-$?"
             echo "CORECLR CROSS ARM64 NATIVE build result $?" | tee -a $LOG_FILE
             time_stamp
         fi
@@ -403,6 +421,7 @@ if [ "$BUILD_NATIVE" = "YES" ]; then
 #            task_stamp "[COREFX - cross arm64 native]"
 #    
 #            ROOTFS_DIR=~/arm64-rootfs-corefx/ $TIME ./build.sh native $BUILD_TYPE $CLEAN arm64 cross $VERBOSE $SKIPTESTS $EXTRA_OPTIONS /p:TestWithoutNativeImages=true
+#            RESULT="${RESULT}-$?"
 #            echo "COREFX CROSS ARM64 NATIVE build result $?" | tee -a $LOG_FILE
 #            time_stamp
 #        fi
@@ -417,6 +436,7 @@ if [ "$BUILD_NATIVE" = "YES" ]; then
             task_stamp "[CORECLR - host native]"
 
             $TIME ./build.sh $BUILD_TYPE $CLEAN $VERBOSE $SKIPBUILDTESTS $STRIPPED_EXTRA_OPTIONS
+            RESULT="${RESULT}-$?"
             echo "CORECLR HOST NATIVE build result $?" | tee -a $LOG_FILE
             time_stamp
         fi
@@ -426,6 +446,7 @@ if [ "$BUILD_NATIVE" = "YES" ]; then
             task_stamp "[COREFX - host native]"
 
             $TIME ./build.sh native $BUILD_TYPE $CLEAN $VERBOSE $SKIPTESTS $EXTRA_OPTIONS
+            RESULT="${RESULT}-$?"
             echo "COREFX HOST NATIVE build result $?" | tee -a $LOG_FILE
             time_stamp
         fi
@@ -442,8 +463,10 @@ if [ "$BUILD_MANAGED" = "YES" ]; then
 
         if [ "$BUILD_ARM" = "YES" ] || [ "$BUILD_SOFTFP" = "YES" ] || [ "$BUILD_ARM64" = "YES" ]; then
             $TIME ./build.sh managed $BUILD_TYPE $CLEAN $VERBOSE $SKIPTESTS $EXTRA_OPTIONS /p:TestWithoutNativeImages=true
+            RESULT="${RESULT}-$?"
         else
             $TIME ./build.sh managed $BUILD_TYPE $CLEAN $VERBOSE $SKIPTESTS $EXTRA_OPTIONS
+            RESULT="${RESULT}-$?"
         fi
         echo "COREFX MANAGED build result $?" | tee -a $LOG_FILE
         time_stamp
@@ -458,6 +481,7 @@ if [ "$BUILD_CLI" = "YES" ]; then
     task_stamp "[CLI]"
 
     $TIME ./build.sh $BUILD_TYPE
+    RESULT="${RESULT}-$?"
     echo "CLI build result $?" | tee -a $LOG_FILE
     time_stamp
 fi
@@ -470,12 +494,13 @@ if [ "$BUILD_ROSLYN" = "YES" ]; then
     task_stamp "[ROSLYN]"
 
     $TIME make
+    RESULT="${RESULT}-$?"
     echo "ROSLYN build result $?" | tee -a $LOG_FILE
     time_stamp
 fi
 
 date | tee -a $LOG_FILE
 if [ -n "$NOTIFY" ]; then
-    echo "$NOTIFY \"$(hostname -s): $(basename $0) $COMMAND_LINE complete with $? - $(date)\""
-    $NOTIFY "$(hostname -s): $(basename $0) $COMMAND_LINE complete with $? - $(date)"
+    echo "$NOTIFY \"[$(hostname -s)] $COMMAND_LINE COMPLETE$RESULT $(date)\""
+    $NOTIFY "[$(hostname -s)] $COMMAND_LINE COMPLETE$RESULT $(date)"
 fi
