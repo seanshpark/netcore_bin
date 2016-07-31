@@ -83,7 +83,7 @@ BASE_PATH=\$(pwd)
 --coreclr-bins \$BASE_PATH/coreclr/bin/Product/${OS}.${ARCHITECTURE}.${BUILD} \
 --mscorlib-bins \$BASE_PATH/coreclr/bin/Product/${OS}.${ARCHITECTURE}.${BUILD} \
 --corefx-tests \$BASE_PATH/corefx/bin/tests \
---corefx-native-bins \$BASE_PATH/corefx/bin/${OS}.${ARCHITECTURE}.${BUILD} \
+--corefx-native-bins \$BASE_PATH/corefx/bin/${OS}.${ARCHITECTURE}.${BUILD}/Native \
 --corefx-packages \$BASE_PATH/corefx/packages \
 | tee \$BASE_PATH/$(basename $TEST_ROOT).log
 END
