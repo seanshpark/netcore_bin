@@ -83,12 +83,25 @@ function task_stamp
 
 function sync
 {
+    local STASHED=0
+
     if [ -e "$1/.git" ]; then
         UPSTREAM=$(git -C $1 remote | grep -v origin)
         BRANCH=$(git -C $1 branch | grep '^*' | cut -d' ' -f2-)
 
         echo ">>>> sync [$1] branch [master] to [$UPSTREAM/master] <<<<"
-        git -C $1 checkout master
+
+        STASH_RESULT=$(git -C $1 stash)
+        if [ "$STASH_RESULT" != "No local changes to save" ]
+        then
+            STASHED=1
+        fi
+
+        if [ "$BRANCH" != "master" ]
+        then
+            git -C $1 checkout master
+        fi
+
         git -C $1 fetch --all
         git -C $1 merge $UPSTREAM/master
         git -C $1 push
@@ -98,13 +111,22 @@ function sync
         echo "BRANCH:master"
         echo "HASH:$HASH"
 
-        echo ""
-        echo "checkout [$1] branch [$BRANCH]"
-        git -C $1 checkout $BRANCH
-        HASH=$(git -C $1 log -1 --format=%H)
-        echo "BRANCH:$BRANCH"
-        echo "HASH:$HASH"
-        echo ""
+
+        if [ "$BRANCH" != "master" ]
+        then
+            echo ""
+            echo "checkout [$1] branch [$BRANCH]"
+            git -C $1 checkout $BRANCH
+            HASH=$(git -C $1 log -1 --format=%H)
+            echo "BRANCH:$BRANCH"
+            echo "HASH:$HASH"
+            echo ""
+        fi
+
+        if [ "$STASHED" == "1" ]
+        then
+            git -C $1 stash apply
+        fi
     fi
 }
 
@@ -393,7 +415,7 @@ if [ "$BUILD_NATIVE" = "YES" ]; then
         if [ "$BUILD_COREFX" = "YES" ]; then
             cd $BASE_PATH/corefx
             task_stamp "[COREFX - cross arm-softfp native]"
-            
+
             ROOTFS_DIR=~/arm-softfp-rootfs-corefx/ $TIME ./build.sh native $BUILD_TYPE $CLEAN arm-softfp cross $VERBOSE $SKIPTESTS $EXTRA_OPTIONS /p:TestWithoutNativeImages=true
             RESULT="${RESULT}-$?"
             echo "COREFX CROSS ARM-SOFTFP NATIVE build result $?" | tee -a $LOG_FILE
@@ -416,15 +438,15 @@ if [ "$BUILD_NATIVE" = "YES" ]; then
             time_stamp
         fi
 
-#        if [ "$BUILD_COREFX" = "YES" ]; then
-#            cd $BASE_PATH/corefx
-#            task_stamp "[COREFX - cross arm64 native]"
-#    
-#            ROOTFS_DIR=~/arm64-rootfs-corefx/ $TIME ./build.sh native $BUILD_TYPE $CLEAN arm64 cross $VERBOSE $SKIPTESTS $EXTRA_OPTIONS /p:TestWithoutNativeImages=true
-#            RESULT="${RESULT}-$?"
-#            echo "COREFX CROSS ARM64 NATIVE build result $?" | tee -a $LOG_FILE
-#            time_stamp
-#        fi
+        #        if [ "$BUILD_COREFX" = "YES" ]; then
+        #            cd $BASE_PATH/corefx
+        #            task_stamp "[COREFX - cross arm64 native]"
+        #    
+        #            ROOTFS_DIR=~/arm64-rootfs-corefx/ $TIME ./build.sh native $BUILD_TYPE $CLEAN arm64 cross $VERBOSE $SKIPTESTS $EXTRA_OPTIONS /p:TestWithoutNativeImages=true
+        #            RESULT="${RESULT}-$?"
+        #            echo "COREFX CROSS ARM64 NATIVE build result $?" | tee -a $LOG_FILE
+        #            time_stamp
+        #        fi
     fi
 
     #
