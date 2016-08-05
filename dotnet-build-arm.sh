@@ -111,6 +111,6 @@ scp -r $COREFX_TEST_SET ${TARGET_DEVICE}:
 
 # run test
 echo "[RUN CORECLR UNIT_TEST ON THE DEVICE]"
-ssh $TARGET_DEVICE "cd ~/unit_test;screen -S coreclr-${DATETIME} -d -m time ./do-release-test.sh"
+ssh $TARGET_DEVICE "cd ~/unit_test;screen -S coreclr-${DATETIME} -d -m time ./do-tests.sh"
 echo "[RUN COREFX UNIT_TEST ON THE DEVICE]"
 ssh $TARGET_DEVICE "export UNW_ARM_UNWIND_METHOD=6;cd ~/$COREFX_TEST_SET;screen -S corefx-${DATETIME} -d -m time ./run-corefx-test.sh Release"
