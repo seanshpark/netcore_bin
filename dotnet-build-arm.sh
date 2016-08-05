@@ -68,18 +68,18 @@ done
 echo '[CLEAN & BUILD CORECLR]'
 cd $BASE_PATH/coreclr
 ./clean.sh
-ROOTFS_DIR=$HOME/arm-rootfs-coreclr/ time ./build.sh arm cross release verbose clang3.8 |& tee $BASE_PATH/coreclr-build-${DATETIME}.log
+ROOTFS_DIR=$HOME/arm-rootfs-coreclr/ time ./build.sh arm cross release verbose clang3.8 2>&1 tee $BASE_PATH/coreclr-build-${DATETIME}.log
 check_result $? 1
 
 # build corefx
 cd $BASE_PATH/corefx
 ./clean.sh
 echo '[CLEAN & BUILD COREFX-NATIVE]'
-ROOTFS_DIR=$HOME/arm-rootfs-corefx/ time ./build-native.sh -release -buildArch=arm -- cross verbose /p:TestWithoutNativeImages=true |& tee $BASE_PATH/corefx-native-build-${DATETIME}.log
+ROOTFS_DIR=$HOME/arm-rootfs-corefx/ time ./build-native.sh -release -buildArch=arm -- cross verbose /p:TestWithoutNativeImages=true 2>&1 tee $BASE_PATH/corefx-native-build-${DATETIME}.log
 check_result $? 2
 
 echo '[CLEAN & BUILD COREFX-MANAGED]'
-ROOTFS_DIR=$HOME/arm-rootfs-corefx/ time ./build-managed.sh -release -SkipTests -- /p:TestWithoutNativeImages=true |& tee $BASE_PATH/corefx-managed-build-${DATETIME}.log
+ROOTFS_DIR=$HOME/arm-rootfs-corefx/ time ./build-managed.sh -release -SkipTests -- /p:TestWithoutNativeImages=true 2>&1 tee $BASE_PATH/corefx-managed-build-${DATETIME}.log
 check_result $? 4
 
 if [ "$TOTAL_EXIT_CODE" -ne "0" ]
