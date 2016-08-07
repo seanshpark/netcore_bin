@@ -14,6 +14,11 @@ function usage
     echo '                 verbose : Verbose output.'
     echo '                   debug : Build Debug configuration.'
     echo '                 release : Build Release configuration. <default>'
+    echo '                 coreclr : Build coreCLR.'
+    echo '                  corefx : Build CoreFX.'
+    echo '           corefx-native : Build CoreFX native only.'
+    echo '          corefx-managed : Build CoreFX managed only.'
+    echo ''
     echo '            --skip-build : Skip build.'
     echo '            --build-test : Build unit test package.'
     echo '              --run-test : Build unit test package and running on target device.'
@@ -40,8 +45,11 @@ TOTAL_RESULT=
 TOTAL_EXIT_CODE=0
 BUILD_TEST=0
 RUN_TEST=0
-TIME=$(which time)
+TIME=
 OUTERLOOP=
+BUILD_CORECLR=0
+BUILD_COREFX_NATIVE=0
+BUILD_COREFX_MANAGED=0
 
 function message
 {
@@ -92,6 +100,19 @@ do
         release|debug)
             CONFIGURATION=$1
             ;;
+        coreclr)
+            BUILD_CORECLR=1
+            ;;
+        corefx)
+            BUILD_COREFX_NATIVE=1
+            BUILD_COREFX_MANAGED=1
+            ;;
+        corefx-native)
+            BUILD_COREFX_NATIVE=1
+            ;;
+        corefx-managed)
+            BUILD_COREFX_MANAGED=1
+            ;;
         --skip-build)
             SKIP_BUILD=1
             ;;
@@ -114,6 +135,13 @@ do
     esac
     shift
 done
+
+if [ "$BUILD_CORECLR" == "0" ] && [ "$BUILD_CORECLR" == "0" ] && [ "$BUILD_CORECLR" == "0" ]
+then
+    BUILD_CORECLR=1
+    BUILD_COREFX_NATIVE=1
+    BUILD_COREFX_MANAGED=1
+fi
 
 # initialize variable
 TARGET_DEVICE=pi2home
@@ -138,12 +166,13 @@ echo ''
 cd $BASE_PATH/coreclr
 do_clean "CORECLR"
 
-if [ "$SKIP_BUILD" != "1" ]
+if [ "$SKIP_BUILD" != "1" ]  && [ "$BUILD_CORECLR" == "1" ]
 then
     message "[BUILD CORECLR]"
     echo "ROOTFS_DIR=$HOME/arm-rootfs-coreclr/ $TIME ./build.sh arm cross $CONFIGURATION $VERBOSE clang3.8 |& tee $BASE_PATH/coreclr-build-${DATETIME}.log" | tee $BASE_PATH/coreclr-build-${DATETIME}.log
     ROOTFS_DIR=$HOME/arm-rootfs-coreclr/ $TIME ./build.sh arm cross $CONFIGURATION $VERBOSE clang3.8 |& tee -a $BASE_PATH/coreclr-build-${DATETIME}.log
-    check_result $? 1
+    RESULT=$?
+    check_result $RESULT 1
 fi
 
 # build corefx
@@ -152,15 +181,23 @@ do_clean "COREFX"
 
 if [ "$SKIP_BUILD" != "1" ]
 then
-    message "[BUILD COREFX-NATIVE]"
-    echo "ROOTFS_DIR=$HOME/arm-rootfs-corefx/ $TIME ./build-native.sh -$CONFIGURATION -buildArch=arm $OUTERLOOP -- cross $VERBOSE /p:TestWithoutNativeImages=true |& tee $BASE_PATH/corefx-native-build-${DATETIME}.log" | tee $BASE_PATH/corefx-native-build-${DATETIME}.log
-    ROOTFS_DIR=$HOME/arm-rootfs-corefx/ $TIME ./build-native.sh -$CONFIGURATION -buildArch=arm -- cross $VERBOSE /p:TestWithoutNativeImages=true |& tee -a $BASE_PATH/corefx-native-build-${DATETIME}.log
-    check_result $? 2
+    if [ "$BUILD_COREFX_NATIVE" == "1" ]
+    then
+        message "[BUILD COREFX-NATIVE]"
+        echo "ROOTFS_DIR=$HOME/arm-rootfs-corefx/ $TIME ./build-native.sh -$CONFIGURATION -buildArch=arm $OUTERLOOP -- cross $VERBOSE /p:TestWithoutNativeImages=true |& tee $BASE_PATH/corefx-native-build-${DATETIME}.log" | tee $BASE_PATH/corefx-native-build-${DATETIME}.log
+        ROOTFS_DIR=$HOME/arm-rootfs-corefx/ $TIME ./build-native.sh -$CONFIGURATION -buildArch=arm -- cross $VERBOSE /p:TestWithoutNativeImages=true |& tee -a $BASE_PATH/corefx-native-build-${DATETIME}.log
+        RESULT=$?
+        check_result $RESULT 2
+    fi
 
-    message "[BUILD COREFX-MANAGED]"
-    echo "ROOTFS_DIR=$HOME/arm-rootfs-corefx/ $TIME ./build-managed.sh -$CONFIGURATION -SkipTests $OUTERLOOP -- /p:TestWithoutNativeImages=true |& tee $BASE_PATH/corefx-managed-build-${DATETIME}.log" | tee $BASE_PATH/corefx-managed-build-${DATETIME}.log
-    ROOTFS_DIR=$HOME/arm-rootfs-corefx/ $TIME ./build-managed.sh -$CONFIGURATION -SkipTests -- /p:TestWithoutNativeImages=true |& tee -a $BASE_PATH/corefx-managed-build-${DATETIME}.log
-    check_result $? 4
+    if [ "$BUILD_COREFX_MANAGED" == "1" ]
+    then
+        message "[BUILD COREFX-MANAGED]"
+        echo "ROOTFS_DIR=$HOME/arm-rootfs-corefx/ $TIME ./build-managed.sh -$CONFIGURATION -SkipTests $OUTERLOOP -- /p:TestWithoutNativeImages=true |& tee $BASE_PATH/corefx-managed-build-${DATETIME}.log" | tee $BASE_PATH/corefx-managed-build-${DATETIME}.log
+        ROOTFS_DIR=$HOME/arm-rootfs-corefx/ $TIME ./build-managed.sh -$CONFIGURATION -SkipTests -- /p:TestWithoutNativeImages=true |& tee -a $BASE_PATH/corefx-managed-build-${DATETIME}.log
+        RESULT=$?
+        check_result $RESULT 4
+    fi
 fi
 
 if [ "$TOTAL_EXIT_CODE" -ne "0" ]
