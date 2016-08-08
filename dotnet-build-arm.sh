@@ -163,11 +163,11 @@ echo "DATETIME=$(date +%Y%m%d-%T)"
 echo ''
 
 # build coreclr
-cd $BASE_PATH/coreclr
-do_clean "CORECLR"
-
 if [ "$SKIP_BUILD" != "1" ]  && [ "$BUILD_CORECLR" == "1" ]
 then
+    cd $BASE_PATH/coreclr
+    do_clean "CORECLR"
+
     message "[BUILD CORECLR]"
     echo "ROOTFS_DIR=$HOME/arm-rootfs-coreclr/ $TIME ./build.sh arm cross $CONFIGURATION $VERBOSE clang3.8 |& tee $BASE_PATH/coreclr-build-${DATETIME}.log" | tee $BASE_PATH/coreclr-build-${DATETIME}.log
     ROOTFS_DIR=$HOME/arm-rootfs-coreclr/ $TIME ./build.sh arm cross $CONFIGURATION $VERBOSE clang3.8 |& tee -a $BASE_PATH/coreclr-build-${DATETIME}.log
@@ -176,11 +176,11 @@ then
 fi
 
 # build corefx
-cd $BASE_PATH/corefx
-do_clean "COREFX"
-
 if [ "$SKIP_BUILD" != "1" ]
 then
+    cd $BASE_PATH/corefx
+    do_clean "COREFX"
+
     if [ "$BUILD_COREFX_NATIVE" == "1" ]
     then
         message "[BUILD COREFX-NATIVE]"
