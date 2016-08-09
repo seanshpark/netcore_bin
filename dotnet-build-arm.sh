@@ -6,7 +6,7 @@
 function usage
 {
     echo ''
-    echo "Usage: [BASE_PATH=<git_base>] $(basename $0) [option]"
+    echo "Usage: [BASE_PATH=<git base>] [TARGET_DEVICE=<target hostname>] $(basename $0) [option]"
     echo ''
     echo '    [option]'
     echo '        -? | -h | --help : Print this instruction.'
@@ -14,15 +14,18 @@ function usage
     echo '                 verbose : Verbose output.'
     echo '                   debug : Build Debug configuration.'
     echo '                 release : Build Release configuration. <default>'
-    echo '                 coreclr : Build coreCLR.'
+    echo '                     all : Build all. <default>'
+    echo '                 coreclr : Build CoreCLR.'
     echo '                  corefx : Build CoreFX.'
     echo '           corefx-native : Build CoreFX native only.'
     echo '          corefx-managed : Build CoreFX managed only.'
     echo ''
+    echo '                --softfp : Target arm-softfp'
     echo '            --skip-build : Skip build.'
     echo '            --build-test : Build unit test package.'
     echo '              --run-test : Build unit test package and running on target device.'
     echo '     --copy-overlay-only : Don'"'"'t copy full CoreCLR test package. Instead, copy coreoverlay directory only.'
+    echo '      --enable-jit-debug : Enable JIT code debugging with lldb + libsos.dll.'
     echo '             --outerloop : Build corefx outloop test.'
     echo ''
     exit
@@ -31,6 +34,11 @@ function usage
 # set $BASE_PATH
 if [ -z "$BASE_PATH" ]; then
     BASE_PATH=$(pwd)
+fi
+
+# set $TARGET_DEVICE
+if [ -z "$TARGET_DEVICE" ]; then
+    TARGET_DEVICE=pi2
 fi
 
 # initialize configuration variable
@@ -46,10 +54,12 @@ TOTAL_EXIT_CODE=0
 BUILD_TEST=0
 RUN_TEST=0
 TIME=
+ENABLE_JIT_DEBUG=
 OUTERLOOP=
 BUILD_CORECLR=0
 BUILD_COREFX_NATIVE=0
 BUILD_COREFX_MANAGED=0
+ARCHITECTURE=arm
 
 function message
 {
@@ -126,8 +136,14 @@ do
         --copy-overlay-only)
             COPY_OVERLAY_ONLY=1
             ;;
+        --enable-jit-debug)
+            ENABLE_JIT_DEBUG="cmakeargs -DFEATURE_GDBJIT=TRUE"
+            ;;
         --outerloop)
             OUTERLOOP="-Outerloop=true"
+            ;;
+        --softfp)
+            ARCHITECTURE=arm-softfp
             ;;
         *)
             EXTRA_OPTIONS="${EXTRA_OPTIONS} $1"
@@ -136,7 +152,7 @@ do
     shift
 done
 
-if [ "$BUILD_CORECLR" == "0" ] && [ "$BUILD_CORECLR" == "0" ] && [ "$BUILD_CORECLR" == "0" ]
+if [ "$BUILD_CORECLR" == "0" ] && [ "$BUILD_COREFX_NATIVE" == "0" ] && [ "$BUILD_COREFX_MANAGED" == "0" ]
 then
     BUILD_CORECLR=1
     BUILD_COREFX_NATIVE=1
@@ -144,12 +160,11 @@ then
 fi
 
 # initialize variable
-TARGET_DEVICE=pi2home
 CONFIGURATION=$(echo $CONFIGURATION | tr '[:upper:]' '[:lower:]')
 CAP_CONFIGURATION=$(echo $CONFIGURATION | tr 'rd' 'RD')
 CORECLR_TEST_SET=Windows_NT.x86.$CAP_CONFIGURATION
 OVERLAY=$CORECLR_TEST_SET/Tests/coreoverlay
-COREFX_TEST_SET=corefx-Linux.arm.$CAP_CONFIGURATION-test
+COREFX_TEST_SET=corefx-Linux.${ARCHITECTURE}.$CAP_CONFIGURATION-test
 DATETIME=$(date +%Y%m%d-%T)
 
 echo "$COMMAND_LINE"
@@ -157,8 +172,8 @@ echo ''
 echo "CONFIGURATION=$(echo $CONFIGURATION | tr '[:upper:]' '[:lower:]')"
 echo "CORECLR_TEST_SET=Windows_NT.x86.$CAP_CONFIGURATION"
 echo "OVERLAY=$CORECLR_TEST_SET/Tests/coreoverlay"
-echo "COREFX_TEST_SET=corefx-Linux.arm.$CAP_CONFIGURATION-test"
-echo "TARGET_DEVICE=pi2home"
+echo "COREFX_TEST_SET=corefx-Linux.${ARCHITECTURE}.$CAP_CONFIGURATION-test"
+echo "TARGET_DEVICE=$TARGET_DEVICE"
 echo "DATETIME=$(date +%Y%m%d-%T)"
 echo ''
 
@@ -169,8 +184,8 @@ then
     do_clean "CORECLR"
 
     message "[BUILD CORECLR]"
-    echo "ROOTFS_DIR=$HOME/arm-rootfs-coreclr/ $TIME ./build.sh arm cross $CONFIGURATION $VERBOSE clang3.8 |& tee $BASE_PATH/coreclr-build-${DATETIME}.log" | tee $BASE_PATH/coreclr-build-${DATETIME}.log
-    ROOTFS_DIR=$HOME/arm-rootfs-coreclr/ $TIME ./build.sh arm cross $CONFIGURATION $VERBOSE clang3.8 |& tee -a $BASE_PATH/coreclr-build-${DATETIME}.log
+    echo "ROOTFS_DIR=$HOME/${ARCHITECTURE}-rootfs-coreclr/ $TIME ./build.sh ${ARCHITECTURE} cross $CONFIGURATION $VERBOSE $ENABLE_JIT_DEBUG clang3.8 |& tee $BASE_PATH/coreclr-build-${DATETIME}.log" | tee $BASE_PATH/coreclr-build-${DATETIME}.log
+    ROOTFS_DIR=$HOME/${ARCHITECTURE}-rootfs-coreclr/ $TIME ./build.sh ${ARCHITECTURE} cross $CONFIGURATION $VERBOSE $ENABLE_JIT_DEBUG clang3.8 |& tee -a $BASE_PATH/coreclr-build-${DATETIME}.log
     RESULT=$?
     check_result $RESULT 1
 fi
@@ -178,14 +193,17 @@ fi
 # build corefx
 if [ "$SKIP_BUILD" != "1" ]
 then
-    cd $BASE_PATH/corefx
-    do_clean "COREFX"
+    if [ "$BUILD_COREFX_NATIVE" == "1" ] || [ "$BUILD_COREFX_MANAGED" == "1" ]
+    then
+        cd $BASE_PATH/corefx
+        do_clean "COREFX"
+    fi
 
     if [ "$BUILD_COREFX_NATIVE" == "1" ]
     then
         message "[BUILD COREFX-NATIVE]"
-        echo "ROOTFS_DIR=$HOME/arm-rootfs-corefx/ $TIME ./build-native.sh -$CONFIGURATION -buildArch=arm $OUTERLOOP -- cross $VERBOSE /p:TestWithoutNativeImages=true |& tee $BASE_PATH/corefx-native-build-${DATETIME}.log" | tee $BASE_PATH/corefx-native-build-${DATETIME}.log
-        ROOTFS_DIR=$HOME/arm-rootfs-corefx/ $TIME ./build-native.sh -$CONFIGURATION -buildArch=arm -- cross $VERBOSE /p:TestWithoutNativeImages=true |& tee -a $BASE_PATH/corefx-native-build-${DATETIME}.log
+        echo "ROOTFS_DIR=$HOME/${ARCHITECTURE}-rootfs-corefx/ $TIME ./build-native.sh -$CONFIGURATION -buildArch=${ARCHITECTURE} $OUTERLOOP -- cross $VERBOSE /p:TestWithoutNativeImages=true |& tee $BASE_PATH/corefx-native-build-${DATETIME}.log" | tee $BASE_PATH/corefx-native-build-${DATETIME}.log
+        ROOTFS_DIR=$HOME/${ARCHITECTURE}-rootfs-corefx/ $TIME ./build-native.sh -$CONFIGURATION -buildArch=${ARCHITECTURE} -- cross $VERBOSE /p:TestWithoutNativeImages=true |& tee -a $BASE_PATH/corefx-native-build-${DATETIME}.log
         RESULT=$?
         check_result $RESULT 2
     fi
@@ -193,8 +211,8 @@ then
     if [ "$BUILD_COREFX_MANAGED" == "1" ]
     then
         message "[BUILD COREFX-MANAGED]"
-        echo "ROOTFS_DIR=$HOME/arm-rootfs-corefx/ $TIME ./build-managed.sh -$CONFIGURATION -SkipTests $OUTERLOOP -- /p:TestWithoutNativeImages=true |& tee $BASE_PATH/corefx-managed-build-${DATETIME}.log" | tee $BASE_PATH/corefx-managed-build-${DATETIME}.log
-        ROOTFS_DIR=$HOME/arm-rootfs-corefx/ $TIME ./build-managed.sh -$CONFIGURATION -SkipTests -- /p:TestWithoutNativeImages=true |& tee -a $BASE_PATH/corefx-managed-build-${DATETIME}.log
+        echo "ROOTFS_DIR=$HOME/${ARCHITECTURE}-rootfs-corefx/ $TIME ./build-managed.sh -$CONFIGURATION -SkipTests $OUTERLOOP -- /p:TestWithoutNativeImages=true |& tee $BASE_PATH/corefx-managed-build-${DATETIME}.log" | tee $BASE_PATH/corefx-managed-build-${DATETIME}.log
+        ROOTFS_DIR=$HOME/${ARCHITECTURE}-rootfs-corefx/ $TIME ./build-managed.sh -$CONFIGURATION -SkipTests -- /p:TestWithoutNativeImages=true |& tee -a $BASE_PATH/corefx-managed-build-${DATETIME}.log
         RESULT=$?
         check_result $RESULT 4
     fi
@@ -215,14 +233,14 @@ then
         rm -rf $BASE_PATH/coreclr/bin/tests/$OVERLAY
     fi
     message "[BUILD CORECLR TEST PACKAGE]"
-    dotnet-runtest.sh Linux.arm.$CAP_CONFIGURATION --build-overlay-only
+    dotnet-runtest.sh Linux.${ARCHITECTURE}.$CAP_CONFIGURATION --build-overlay-only
 
     if [ -e "$BASE_PATH/$COREFX_TEST_SET" ]
     then
         rm -rf $BASE_PATH/$COREFX_TEST_SET
     fi
     message "[BUILD COREFX TEST PACKAGE]"
-    build-corefx-test.sh Linux.arm.$CAP_CONFIGURATION
+    build-corefx-test.sh Linux.${ARCHITECTURE}.$CAP_CONFIGURATION
 fi
 
 if [ "$RUN_TEST" == "1" ]
