@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash 
 #
 # Written by Sung-Jae Lee (sjlee@mail.com)
 #
@@ -20,12 +20,21 @@ function usage
     echo '           corefx-native : Build CoreFX native only.'
     echo '          corefx-managed : Build CoreFX managed only.'
     echo ''
-    echo '                --softfp : Target arm-softfp'
     echo '            --skip-build : Skip build.'
-    echo '            --build-test : Build unit test package.'
-    echo '              --run-test : Build unit test package and running on target device.'
-    echo '     --copy-overlay-only : Don'"'"'t copy full CoreCLR test package. Instead, copy coreoverlay directory only.'
+    echo '                --softfp : Target arm-softfp'
     echo '      --enable-jit-debug : Enable JIT code debugging with lldb + libsos.dll.'
+    echo ''
+    echo '            --build-test : Build unit test package.'
+    echo '    --build-coreclr-test : Build coreclr unit test package.'
+    echo '     --build-corefx-test : Build corefx unit test package.'
+    echo '             --copy-test : Copy test package to target device.'
+    echo '     --copy-coreclr-test : Copy coreclr unit test package to target device.'
+    echo '      --copy-corefx-test : Copy corefx unit test package to target device.'
+    echo '              --run-test : Run unit test package and running on target device.'
+    echo '      --run-coreclr-test : Run coreclr unit test package and running on target device.'
+    echo '       --run-corefx-test : Run corefx unit test package and running on target device.'
+    echo ''
+    echo '     --copy-overlay-only : Don'"'"'t copy full CoreCLR test package. Instead, copy coreoverlay directory only.'
     echo '             --outerloop : Build corefx outloop test.'
     echo ''
     exit
@@ -51,8 +60,6 @@ COPY_OVERLAY_ONLY=
 EXTRA_OPTIONS=
 TOTAL_RESULT=
 TOTAL_EXIT_CODE=0
-BUILD_TEST=0
-RUN_TEST=0
 TIME=
 ENABLE_JIT_DEBUG=
 OUTERLOOP=
@@ -60,6 +67,12 @@ BUILD_CORECLR=0
 BUILD_COREFX_NATIVE=0
 BUILD_COREFX_MANAGED=0
 ARCHITECTURE=arm
+BUILD_CORECLR_TEST=0
+COPY_CORECLR_TEST=0
+RUN_CORECLR_TEST=0
+BUILD_COREFX_TEST=0
+COPY_COREFX_TEST=0
+RUN_COREFX_TEST=0
 
 function message
 {
@@ -129,9 +142,36 @@ do
         --build-test)
             BUILD_TEST=1
             ;;
+        --build-coreclr-test)
+            BUILD_CORECLR_TEST=1
+            ;;
+        --build-corefx-test)
+            BUILD_COREFX_TEST=1
+            ;;
+        --copy-test)
+            BUILD_TEST=1
+            COPY_TEST=1
+            ;;
+        --copy-coreclr-test)
+            COPY_CORECLR_TEST=1
+            ;;
+        --copy-corefx-test)
+            COPY_COREFX_TEST=1
+            ;;
         --run-test)
             BUILD_TEST=1
+            COPY_TEST=1
             RUN_TEST=1
+            ;;
+        --run-coreclr_test)
+            BUILD_CORECLR_TEST=1
+            COPY_CORECLR_TEST=1
+            RUN_CORECLR_TEST=1
+            ;;
+        --run-corefx-test)
+            BUILD_COREFX_TEST=1
+            COPY_COREFX_TEST=1
+            RUN_COREFX_TEST=1
             ;;
         --copy-overlay-only)
             COPY_OVERLAY_ONLY=1
@@ -140,7 +180,7 @@ do
             ENABLE_JIT_DEBUG="cmakeargs -DFEATURE_GDBJIT=TRUE"
             ;;
         --outerloop)
-            OUTERLOOP="-Outerloop=true"
+            OUTERLOOP="/p:Outerloop=true"
             ;;
         --softfp)
             ARCHITECTURE=arm-softfp
@@ -152,11 +192,29 @@ do
     shift
 done
 
-if [ "$BUILD_CORECLR" == "0" ] && [ "$BUILD_COREFX_NATIVE" == "0" ] && [ "$BUILD_COREFX_MANAGED" == "0" ]
+if [ "$BUILD_CORECLR" == "0" ] && [ "$BUILD_COREFX_NATIVE" == "0" ] && [ "$BUILD_COREFX_MANAGED" == "0" ] && [ "$SKIP_BUILD" == "0" ]
 then
     BUILD_CORECLR=1
     BUILD_COREFX_NATIVE=1
     BUILD_COREFX_MANAGED=1
+fi
+
+if [ "$BUILD_TEST" == "1" ] || [ "$COPY_TEST" == "1" ] || [ "$RUN_TEST" == "1" ] || [ "$SKIP_BUILD" == "1" ]
+then
+    BUILD_CORECLR_TEST=$BUILD_CORECLR
+    BUILD_COREFX_TEST=[ "$BUILD_COREFX_NATIVE" == "1" ] || [ "$BUILD_COREFX_MANAGED" == "1" ]
+fi
+
+if [ "$COPY_TEST" == "1" ] || [ "$RUN_TEST" == "1" ] || [ "$SKIP_BUILD" == "1" ]
+then
+    COPY_CORECLR_TEST=$BUILD_CORECLR
+    COPY_COREFX_TEST=[ "$BUILD_COREFX_NATIVE" == "1" ] || [ "$BUILD_COREFX_MANAGED" == "1" ]
+fi
+
+if [ "$RUN_TEST" == "1" ] || [ "$SKIP_BUILD" == "1" ]
+then
+    RUN_CORECLR_TEST=$BUILD_CORECLR
+    RUN_COREFX_TEST=[ "$BUILD_COREFX_NATIVE" == "1" ] || [ "$BUILD_COREFX_MANAGED" == "1" ]
 fi
 
 # initialize variable
@@ -202,8 +260,8 @@ then
     if [ "$BUILD_COREFX_NATIVE" == "1" ]
     then
         message "[BUILD COREFX-NATIVE]"
-        echo "ROOTFS_DIR=$HOME/${ARCHITECTURE}-rootfs-corefx/ $TIME ./build-native.sh -$CONFIGURATION -buildArch=${ARCHITECTURE} $OUTERLOOP -- cross $VERBOSE /p:TestWithoutNativeImages=true |& tee $BASE_PATH/corefx-native-build-${DATETIME}.log" | tee $BASE_PATH/corefx-native-build-${DATETIME}.log
-        ROOTFS_DIR=$HOME/${ARCHITECTURE}-rootfs-corefx/ $TIME ./build-native.sh -$CONFIGURATION -buildArch=${ARCHITECTURE} -- cross $VERBOSE /p:TestWithoutNativeImages=true |& tee -a $BASE_PATH/corefx-native-build-${DATETIME}.log
+        echo "ROOTFS_DIR=$HOME/${ARCHITECTURE}-rootfs-corefx/ $TIME ./build-native.sh -$CONFIGURATION -buildArch=${ARCHITECTURE} -- cross $VERBOSE $OUTERLOOP /p:TestWithoutNativeImages=true |& tee $BASE_PATH/corefx-native-build-${DATETIME}.log" | tee $BASE_PATH/corefx-native-build-${DATETIME}.log
+        ROOTFS_DIR=$HOME/${ARCHITECTURE}-rootfs-corefx/ $TIME ./build-native.sh -$CONFIGURATION -buildArch=${ARCHITECTURE} -- cross $VERBOSE $OUTERLOOP /p:TestWithoutNativeImages=true |& tee -a $BASE_PATH/corefx-native-build-${DATETIME}.log
         RESULT=$?
         check_result $RESULT 2
     fi
@@ -211,8 +269,8 @@ then
     if [ "$BUILD_COREFX_MANAGED" == "1" ]
     then
         message "[BUILD COREFX-MANAGED]"
-        echo "ROOTFS_DIR=$HOME/${ARCHITECTURE}-rootfs-corefx/ $TIME ./build-managed.sh -$CONFIGURATION -SkipTests $OUTERLOOP -- /p:TestWithoutNativeImages=true |& tee $BASE_PATH/corefx-managed-build-${DATETIME}.log" | tee $BASE_PATH/corefx-managed-build-${DATETIME}.log
-        ROOTFS_DIR=$HOME/${ARCHITECTURE}-rootfs-corefx/ $TIME ./build-managed.sh -$CONFIGURATION -SkipTests -- /p:TestWithoutNativeImages=true |& tee -a $BASE_PATH/corefx-managed-build-${DATETIME}.log
+        echo "ROOTFS_DIR=$HOME/${ARCHITECTURE}-rootfs-corefx/ $TIME ./build-managed.sh -$CONFIGURATION -SkipTests -- $OUTERLOOP /p:TestWithoutNativeImages=true |& tee $BASE_PATH/corefx-managed-build-${DATETIME}.log" | tee $BASE_PATH/corefx-managed-build-${DATETIME}.log
+        ROOTFS_DIR=$HOME/${ARCHITECTURE}-rootfs-corefx/ $TIME ./build-managed.sh -$CONFIGURATION -SkipTests -- $OUTERLOOP /p:TestWithoutNativeImages=true |& tee -a $BASE_PATH/corefx-managed-build-${DATETIME}.log
         RESULT=$?
         check_result $RESULT 4
     fi
@@ -224,9 +282,9 @@ then
     exit $TOTAL_EXIT_CODE
 fi
 
-if [ "$BUILD_TEST" == "1" ]
+# build test running set
+if [ "$BUILD_CORECLR_TEST" == "1" ]
 then
-    # build test running set
     cd $BASE_PATH
     if [ -e "$BASE_PATH/coreclr/bin/tests/$OVERLAY" ]
     then
@@ -234,7 +292,11 @@ then
     fi
     message "[BUILD CORECLR TEST PACKAGE]"
     dotnet-runtest.sh Linux.${ARCHITECTURE}.$CAP_CONFIGURATION --build-overlay-only
+fi
 
+if [ "$BUILD_COREFX_TEST" == "1" ]
+then
+    cd $BASE_PATH
     if [ -e "$BASE_PATH/$COREFX_TEST_SET" ]
     then
         rm -rf $BASE_PATH/$COREFX_TEST_SET
@@ -243,9 +305,9 @@ then
     build-corefx-test.sh Linux.${ARCHITECTURE}.$CAP_CONFIGURATION
 fi
 
-if [ "$RUN_TEST" == "1" ]
+# copy test running set to target
+if [ "$COPY_CORECLR_TEST" == "1" ]
 then
-    # copy test running set to target
     message "[COPY CORECLR TEST PACKAGE TO TARGET DEVICE]"
     if [ "$COPY_OVERLAY_ONLY" == "1" ]
     then
@@ -255,14 +317,25 @@ then
         ssh $TARGET_DEVICE "rm -rf $CORECLR_TEST_SET"
         scp -r coreclr/bin/tests/$CORECLR_TEST_SET ${TARGET_DEVICE}:
     fi
+fi
+
+if [ "$COPY_COREFX_TEST" == "1" ]
+then
     message "[COPY COREFX TEST PACKAGE TO TARGET DEVICE]"
     ssh $TARGET_DEVICE "rm -rf $COREFX_TEST_SET"
     scp -r $COREFX_TEST_SET ${TARGET_DEVICE}:
+fi
 
-    # run test
+# run test
+if [ "$RUN_CORECLR_TEST" == "1" ]
+then
     message "[RUN CORECLR UNIT_TEST ON THE DEVICE]"
     echo "ssh $TARGET_DEVICE cd ~/unit_test;screen -S coreclr-${DATETIME} -d -m time ./do-tests.sh $CAP_CONFIGURATION"
     ssh $TARGET_DEVICE "cd ~/unit_test;screen -S coreclr-${DATETIME} -d -m time ./do-tests.sh $CAP_CONFIGURATION"
+fi
+
+if [ "$RUN_COREFX_TEST" == "1" ]
+then
     message "[RUN COREFX UNIT_TEST ON THE DEVICE]"
     echo "ssh $TARGET_DEVICE export UNW_ARM_UNWIND_METHOD=6;cd ~/$COREFX_TEST_SET;screen -S corefx-${DATETIME} -d -m time ./run-corefx-test.sh $CAP_CONFIGURATION"
     ssh $TARGET_DEVICE "export UNW_ARM_UNWIND_METHOD=6;cd ~/$COREFX_TEST_SET;screen -S corefx-${DATETIME} -d -m time ./run-corefx-test.sh $CAP_CONFIGURATION"
@@ -273,3 +346,9 @@ if [ -n "$NOTIFY" ]; then
     message "$NOTIFY \"[$(hostname -s)] $COMMAND_LINE [$TOTAL_RESULT] $(date '+%D %T')\""
     $NOTIFY "[$(hostname -s)] $COMMAND_LINE [$TOTAL_RESULT] $(date '+%D %T')"
 fi
+
+#
+# | Example of setting $NOTIFY in `~/.profile` |
+#
+# export NOTIFY="twidge dmsend lemmaa"
+#
