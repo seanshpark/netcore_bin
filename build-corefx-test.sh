@@ -64,13 +64,16 @@ fi
 while [ -n "\$1" ]
 do
     case \$1 in
-        Debug|Release)
-            TEST_CONFIGURATION=\$1
-            ;;
-        *)
+        -?|-h|--help)
             usage
             exit
             ;;
+        Debug|Release)
+            TEST_CONFIGURATION=\$1
+            ;;
+		*)
+			EXTRA_OPTIONS="\$EXTRA_OPTIONS \$1"
+			;;
     esac
     shift
 done
@@ -85,6 +88,7 @@ BASE_PATH=\$(pwd)
 --corefx-tests \$BASE_PATH/corefx/bin/tests \
 --corefx-native-bins \$BASE_PATH/corefx/bin/${OS}.${ARCHITECTURE}.${BUILD}/Native \
 --corefx-packages \$BASE_PATH/corefx/packages \
+\$EXTRA_OPTIONS \
 | tee \$BASE_PATH/$(basename $TEST_ROOT).log
 END
 
@@ -112,4 +116,5 @@ cp -a $BASE_PATH/corefx/run-test.sh $TEST_ROOT
 #--corefx-tests /home/sjlee/git/corefx/bin/tests \
 #--corefx-native-bins /home/sjlee/git/corefx/bin/Linux.arm.Debug/Native \
 #--corefx-packages /home/sjlee/git/corefx/packages \
+#$EXTRA_OPTIONS \
 #| tee $LOG_FILE
