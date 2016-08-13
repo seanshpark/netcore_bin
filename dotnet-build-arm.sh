@@ -1,4 +1,4 @@
-#!/bin/bash 
+#!/bin/bash
 #
 # Written by Sung-Jae Lee (sjlee@mail.com)
 #
@@ -25,12 +25,13 @@ function usage
     echo '      --enable-jit-debug : Enable JIT code debugging with lldb + libsos.dll.'
     echo ''
     echo '            --build-test : Build unit test package.'
+    echo '             --copy-test : Build & Copy test package to target device.'
+    echo '              --run-test : Build, Copy & Run unit test package and running on target device.'
+    echo ''
     echo '    --build-coreclr-test : Build coreclr unit test package.'
     echo '     --build-corefx-test : Build corefx unit test package.'
-    echo '             --copy-test : Copy test package to target device.'
     echo '     --copy-coreclr-test : Copy coreclr unit test package to target device.'
     echo '      --copy-corefx-test : Copy corefx unit test package to target device.'
-    echo '              --run-test : Run unit test package and running on target device.'
     echo '      --run-coreclr-test : Run coreclr unit test package and running on target device.'
     echo '       --run-corefx-test : Run corefx unit test package and running on target device.'
     echo ''
@@ -140,7 +141,8 @@ do
             SKIP_BUILD=1
             ;;
         --build-test)
-            BUILD_TEST=1
+            BUILD_CORECLR_TEST=1
+            BUILD_COREFX_TEST=1
             ;;
         --build-coreclr-test)
             BUILD_CORECLR_TEST=1
@@ -149,8 +151,10 @@ do
             BUILD_COREFX_TEST=1
             ;;
         --copy-test)
-            BUILD_TEST=1
-            COPY_TEST=1
+            BUILD_CORECLR_TEST=1
+            BUILD_COREFX_TEST=1
+            COPY_CORECLR_TEST=1
+            COPY_COREFX_TEST=1
             ;;
         --copy-coreclr-test)
             COPY_CORECLR_TEST=1
@@ -159,18 +163,17 @@ do
             COPY_COREFX_TEST=1
             ;;
         --run-test)
-            BUILD_TEST=1
-            COPY_TEST=1
-            RUN_TEST=1
+            BUILD_CORECLR_TEST=1
+            BUILD_COREFX_TEST=1
+            COPY_CORECLR_TEST=1
+            COPY_COREFX_TEST=1
+            RUN_CORECLR_TEST=1
+            RUN_COREFX_TEST=1
             ;;
         --run-coreclr_test)
-            BUILD_CORECLR_TEST=1
-            COPY_CORECLR_TEST=1
             RUN_CORECLR_TEST=1
             ;;
         --run-corefx-test)
-            BUILD_COREFX_TEST=1
-            COPY_COREFX_TEST=1
             RUN_COREFX_TEST=1
             ;;
         --copy-overlay-only)
@@ -192,29 +195,11 @@ do
     shift
 done
 
-if [ "$BUILD_CORECLR" == "0" ] && [ "$BUILD_COREFX_NATIVE" == "0" ] && [ "$BUILD_COREFX_MANAGED" == "0" ] && [ "$SKIP_BUILD" == "0" ]
+if [ "$BUILD_CORECLR" == "0" ] && [ "$BUILD_COREFX_NATIVE" == "0" ] && [ "$BUILD_COREFX_MANAGED" == "0" ]
 then
     BUILD_CORECLR=1
     BUILD_COREFX_NATIVE=1
     BUILD_COREFX_MANAGED=1
-fi
-
-if [ "$BUILD_TEST" == "1" ] || [ "$COPY_TEST" == "1" ] || [ "$RUN_TEST" == "1" ] || [ "$SKIP_BUILD" == "1" ]
-then
-    BUILD_CORECLR_TEST=$BUILD_CORECLR
-    BUILD_COREFX_TEST=[ "$BUILD_COREFX_NATIVE" == "1" ] || [ "$BUILD_COREFX_MANAGED" == "1" ]
-fi
-
-if [ "$COPY_TEST" == "1" ] || [ "$RUN_TEST" == "1" ] || [ "$SKIP_BUILD" == "1" ]
-then
-    COPY_CORECLR_TEST=$BUILD_CORECLR
-    COPY_COREFX_TEST=[ "$BUILD_COREFX_NATIVE" == "1" ] || [ "$BUILD_COREFX_MANAGED" == "1" ]
-fi
-
-if [ "$RUN_TEST" == "1" ] || [ "$SKIP_BUILD" == "1" ]
-then
-    RUN_CORECLR_TEST=$BUILD_CORECLR
-    RUN_COREFX_TEST=[ "$BUILD_COREFX_NATIVE" == "1" ] || [ "$BUILD_COREFX_MANAGED" == "1" ]
 fi
 
 # initialize variable
@@ -330,8 +315,14 @@ fi
 if [ "$RUN_CORECLR_TEST" == "1" ]
 then
     message "[RUN CORECLR UNIT_TEST ON THE DEVICE]"
-    echo "ssh $TARGET_DEVICE cd ~/unit_test;screen -S coreclr-${DATETIME} -d -m time ./do-tests.sh $CAP_CONFIGURATION"
-    ssh $TARGET_DEVICE "cd ~/unit_test;screen -S coreclr-${DATETIME} -d -m time ./do-tests.sh $CAP_CONFIGURATION"
+    if [ "$COPY_OVERLAY_ONLY" == "1" ]
+    then
+        echo "ssh $TARGET_DEVICE cd ~/unit_test;screen -S coreclr-${DATETIME} -d -m time ./do-tests.sh $CAP_CONFIGURATION --no-lf-conversion"
+        ssh $TARGET_DEVICE "cd ~/unit_test;screen -S coreclr-${DATETIME} -d -m time ./do-tests.sh $CAP_CONFIGURATION --no-lf-conversion"
+    else
+        echo "ssh $TARGET_DEVICE cd ~/unit_test;screen -S coreclr-${DATETIME} -d -m time ./do-tests.sh $CAP_CONFIGURATION"
+        ssh $TARGET_DEVICE "cd ~/unit_test;screen -S coreclr-${DATETIME} -d -m time ./do-tests.sh $CAP_CONFIGURATION"
+    fi
 fi
 
 if [ "$RUN_COREFX_TEST" == "1" ]
