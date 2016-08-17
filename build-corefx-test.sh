@@ -46,6 +46,8 @@ function generate_test_runner_script
     cat <<END > $TEST_SCRIPT
 #!/bin/bash
 
+export UNW_ARM_UNWIND_METHOD=6
+
 function usage
 {
     echo ''
