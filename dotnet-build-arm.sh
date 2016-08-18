@@ -6,7 +6,15 @@
 function usage
 {
     echo ''
-    echo "Usage: [BASE_PATH=<git base>] [TARGET_DEVICE=<target hostname>] $(basename $0) [option]"
+    echo "Usage: [ENV=<value>] $(basename $0) [option]"
+    echo ''
+    echo '    [ENV=<value>]'
+    echo "       [BASE_PATH=<git base>]"
+    echo "       [TARGET_DEVICE=<target hostname>]"
+    echo "       [ROOTFS_DIR=<RootFS for CoreCLR and CoreFX>]"
+    echo "       [ROOTFS_DIRCLR=<RootFS for CoreCLR>]"
+    echo "       [ROOTFS_DIRFX=<RootFS for CoreFX>]"
+    echo "       [LLVM_ARM_HOME=<LLVM ARM home for CoreCLR/sosplugin>]"
     echo ''
     echo '    [option]'
     echo '        -? | -h | --help : Print this instruction.'
@@ -210,6 +218,21 @@ OVERLAY=$CORECLR_TEST_SET/Tests/coreoverlay
 COREFX_TEST_SET=corefx-Linux.${ARCHITECTURE}.$CAP_CONFIGURATION-test
 DATETIME=$(date +%Y%m%d-%T)
 
+# root fs for cross building
+__RootfsDirClr=$HOME/${ARCHITECTURE}-rootfs-coreclr
+__RootfsDirFx=$HOME/${ARCHITECTURE}-rootfs-corefx
+
+if [[ -n "$ROOTFS_DIR" ]]; then
+    __RootfsDirClr=$ROOTFS_DIR
+    __RootfsDirFx=$ROOTFS_DIR
+fi
+if [[ -n "$ROOTFS_DIRCLR" ]]; then
+    __RootfsDirClr=$ROOTFS_DIRCLR
+fi
+if [[ -n "$ROOTFS_DIRFX" ]]; then
+    __RootfsDirFx=$ROOTFS_DIRFX
+fi
+
 echo "$COMMAND_LINE"
 echo ''
 echo "CONFIGURATION=$(echo $CONFIGURATION | tr '[:upper:]' '[:lower:]')"
@@ -217,8 +240,13 @@ echo "CORECLR_TEST_SET=Windows_NT.x86.$CAP_CONFIGURATION"
 echo "OVERLAY=$CORECLR_TEST_SET/Tests/coreoverlay"
 echo "COREFX_TEST_SET=corefx-Linux.${ARCHITECTURE}.$CAP_CONFIGURATION-test"
 echo "TARGET_DEVICE=$TARGET_DEVICE"
+echo "ROOTFS_DIRCLR=$__RootfsDirClr"
+echo "ROOTFS_DIRFX=$__RootfsDirFx"
+echo "LLVM_ARM_HOME=$LLVM_ARM_HOME"
 echo "DATETIME=$(date +%Y%m%d-%T)"
 echo ''
+
+
 
 # build coreclr
 if [ "$SKIP_BUILD" != "1" ]  && [ "$BUILD_CORECLR" == "1" ]
@@ -227,8 +255,8 @@ then
     do_clean "CORECLR"
 
     message "[BUILD CORECLR]"
-    echo "ROOTFS_DIR=$HOME/${ARCHITECTURE}-rootfs-coreclr/ $TIME ./build.sh ${ARCHITECTURE} cross $CONFIGURATION $VERBOSE $ENABLE_JIT_DEBUG clang3.8 |& tee $BASE_PATH/coreclr-build-${DATETIME}.log" | tee $BASE_PATH/coreclr-build-${DATETIME}.log
-    ROOTFS_DIR=$HOME/${ARCHITECTURE}-rootfs-coreclr/ $TIME ./build.sh ${ARCHITECTURE} cross $CONFIGURATION $VERBOSE $ENABLE_JIT_DEBUG clang3.8 |& tee -a $BASE_PATH/coreclr-build-${DATETIME}.log
+    echo "LLVM_ARM_HOME=$LLVM_ARM_HOME ROOTFS_DIR=$__RootfsDirClr $TIME ./build.sh ${ARCHITECTURE} cross $CONFIGURATION $VERBOSE $ENABLE_JIT_DEBUG clang3.8 |& tee $BASE_PATH/coreclr-build-${DATETIME}.log" | tee $BASE_PATH/coreclr-build-${DATETIME}.log
+    LLVM_ARM_HOME=$LLVM_ARM_HOME ROOTFS_DIR=$__RootfsDirClr $TIME ./build.sh ${ARCHITECTURE} cross $CONFIGURATION $VERBOSE $ENABLE_JIT_DEBUG clang3.8 |& tee -a $BASE_PATH/coreclr-build-${DATETIME}.log
     RESULT=$?
     check_result $RESULT 1
 fi
@@ -245,8 +273,8 @@ then
     if [ "$BUILD_COREFX_NATIVE" == "1" ]
     then
         message "[BUILD COREFX-NATIVE]"
-        echo "ROOTFS_DIR=$HOME/${ARCHITECTURE}-rootfs-corefx/ $TIME ./build-native.sh -$CONFIGURATION -buildArch=${ARCHITECTURE} -- cross $VERBOSE $OUTERLOOP /p:TestWithoutNativeImages=true |& tee $BASE_PATH/corefx-native-build-${DATETIME}.log" | tee $BASE_PATH/corefx-native-build-${DATETIME}.log
-        ROOTFS_DIR=$HOME/${ARCHITECTURE}-rootfs-corefx/ $TIME ./build-native.sh -$CONFIGURATION -buildArch=${ARCHITECTURE} -- cross $VERBOSE $OUTERLOOP /p:TestWithoutNativeImages=true |& tee -a $BASE_PATH/corefx-native-build-${DATETIME}.log
+        echo "ROOTFS_DIR=$__RootfsDirFx/ $TIME ./build-native.sh -$CONFIGURATION -buildArch=${ARCHITECTURE} -- cross $VERBOSE $OUTERLOOP /p:TestWithoutNativeImages=true |& tee $BASE_PATH/corefx-native-build-${DATETIME}.log" | tee $BASE_PATH/corefx-native-build-${DATETIME}.log
+        ROOTFS_DIR=$__RootfsDirFx/ $TIME ./build-native.sh -$CONFIGURATION -buildArch=${ARCHITECTURE} -- cross $VERBOSE $OUTERLOOP /p:TestWithoutNativeImages=true |& tee -a $BASE_PATH/corefx-native-build-${DATETIME}.log
         RESULT=$?
         check_result $RESULT 2
     fi
@@ -254,8 +282,8 @@ then
     if [ "$BUILD_COREFX_MANAGED" == "1" ]
     then
         message "[BUILD COREFX-MANAGED]"
-        echo "ROOTFS_DIR=$HOME/${ARCHITECTURE}-rootfs-corefx/ $TIME ./build-managed.sh -$CONFIGURATION -SkipTests -- $OUTERLOOP /p:TestWithoutNativeImages=true |& tee $BASE_PATH/corefx-managed-build-${DATETIME}.log" | tee $BASE_PATH/corefx-managed-build-${DATETIME}.log
-        ROOTFS_DIR=$HOME/${ARCHITECTURE}-rootfs-corefx/ $TIME ./build-managed.sh -$CONFIGURATION -SkipTests -- $OUTERLOOP /p:TestWithoutNativeImages=true |& tee -a $BASE_PATH/corefx-managed-build-${DATETIME}.log
+        echo "ROOTFS_DIR=$__RootfsDirFx/ $TIME ./build-managed.sh -$CONFIGURATION -SkipTests -- $OUTERLOOP /p:TestWithoutNativeImages=true |& tee $BASE_PATH/corefx-managed-build-${DATETIME}.log" | tee $BASE_PATH/corefx-managed-build-${DATETIME}.log
+        ROOTFS_DIR=$__RootfsDirFx/ $TIME ./build-managed.sh -$CONFIGURATION -SkipTests -- $OUTERLOOP /p:TestWithoutNativeImages=true |& tee -a $BASE_PATH/corefx-managed-build-${DATETIME}.log
         RESULT=$?
         check_result $RESULT 4
     fi
