@@ -178,7 +178,7 @@ do
             RUN_CORECLR_TEST=1
             RUN_COREFX_TEST=1
             ;;
-        --run-coreclr_test)
+        --run-coreclr-test)
             RUN_CORECLR_TEST=1
             ;;
         --run-corefx-test)
