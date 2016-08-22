@@ -21,8 +21,8 @@ function usage
     echo '                   clean : Do clean build.'
     echo '                 verbose : Verbose output.'
     echo '                   debug : Build Debug configuration.'
-    echo '                 release : Build Release configuration. <default>'
-    echo '                     all : Build all. <default>'
+    echo '                 release : Build Release configuration.'
+    echo '                     all : Build all.'
     echo '                 coreclr : Build CoreCLR.'
     echo '                  corefx : Build CoreFX.'
     echo '           corefx-native : Build CoreFX native only.'
@@ -33,8 +33,8 @@ function usage
     echo '      --enable-jit-debug : Enable JIT code debugging with lldb + libsos.dll.'
     echo ''
     echo '            --build-test : Build unit test package.'
-    echo '             --copy-test : Build & Copy test package to target device.'
-    echo '              --run-test : Build, Copy & Run unit test package and running on target device.'
+    echo '             --copy-test : Copy test package to target device.'
+    echo '              --run-test : Run unit test package and running on target device.'
     echo ''
     echo '    --build-coreclr-test : Build coreclr unit test package.'
     echo '     --build-corefx-test : Build corefx unit test package.'
@@ -61,7 +61,7 @@ fi
 
 # initialize configuration variable
 COMMAND_LINE="$(basename $0) $*"
-CONFIGURATION=release
+CONFIGURATION=
 CLEAN_BUILD=0
 VERBOSE=
 SKIP_BUILD=0
@@ -116,6 +116,12 @@ function do_clean
     fi
 }
 
+if [ $# == 0 ]
+then
+    usage
+    exit
+fi
+
 # check commandline options
 while [ -n "$1" ]
 do
@@ -131,6 +137,11 @@ do
             ;;
         release|debug)
             CONFIGURATION=$1
+            ;;
+        all)
+            BUILD_CORECLR=1
+            BUILD_COREFX_NATIVE=1
+            BUILD_COREFX_MANAGED=1
             ;;
         coreclr)
             BUILD_CORECLR=1
@@ -159,8 +170,6 @@ do
             BUILD_COREFX_TEST=1
             ;;
         --copy-test)
-            BUILD_CORECLR_TEST=1
-            BUILD_COREFX_TEST=1
             COPY_CORECLR_TEST=1
             COPY_COREFX_TEST=1
             ;;
@@ -171,10 +180,6 @@ do
             COPY_COREFX_TEST=1
             ;;
         --run-test)
-            BUILD_CORECLR_TEST=1
-            BUILD_COREFX_TEST=1
-            COPY_CORECLR_TEST=1
-            COPY_COREFX_TEST=1
             RUN_CORECLR_TEST=1
             RUN_COREFX_TEST=1
             ;;
@@ -203,11 +208,18 @@ do
     shift
 done
 
+if [ -z "$CONFIGURATION" ]
+then
+    echo "ERROR: need build configuration."
+    exit 1
+fi
+
 if [ "$BUILD_CORECLR" == "0" ] && [ "$BUILD_COREFX_NATIVE" == "0" ] && [ "$BUILD_COREFX_MANAGED" == "0" ]
 then
-    BUILD_CORECLR=1
-    BUILD_COREFX_NATIVE=1
-    BUILD_COREFX_MANAGED=1
+    SKIP_BUILD=1
+#    BUILD_CORECLR=1
+#    BUILD_COREFX_NATIVE=1
+#    BUILD_COREFX_MANAGED=1
 fi
 
 # initialize variable
@@ -222,14 +234,17 @@ DATETIME=$(date +%Y%m%d-%T)
 __RootfsDirClr=$HOME/${ARCHITECTURE}-rootfs-coreclr
 __RootfsDirFx=$HOME/${ARCHITECTURE}-rootfs-corefx
 
-if [[ -n "$ROOTFS_DIR" ]]; then
+if [[ -n "$ROOTFS_DIR" ]]
+then
     __RootfsDirClr=$ROOTFS_DIR
     __RootfsDirFx=$ROOTFS_DIR
 fi
-if [[ -n "$ROOTFS_DIRCLR" ]]; then
+if [[ -n "$ROOTFS_DIRCLR" ]]
+then
     __RootfsDirClr=$ROOTFS_DIRCLR
 fi
-if [[ -n "$ROOTFS_DIRFX" ]]; then
+if [[ -n "$ROOTFS_DIRFX" ]]
+then
     __RootfsDirFx=$ROOTFS_DIRFX
 fi
 
@@ -245,8 +260,6 @@ echo "ROOTFS_DIRFX=$__RootfsDirFx"
 echo "LLVM_ARM_HOME=$LLVM_ARM_HOME"
 echo "DATETIME=$(date +%Y%m%d-%T)"
 echo ''
-
-
 
 # build coreclr
 if [ "$SKIP_BUILD" != "1" ]  && [ "$BUILD_CORECLR" == "1" ]
