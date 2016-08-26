@@ -64,10 +64,15 @@ fi
 
 if [ ! -d $TEST_ROOT ]; then
 	HASH=$(git -C $CORECLR log -1 --pretty=%H)
-	TEST_ARCHIVE=~/${TEST_SET}.${HASH}.zip
+	TEST_ARCHIVE=$BASE_PATH/${TEST_SET}.zip
 
 	if [ ! -e $TEST_ARCHIVE ]; then
-		TEST_ARCHIVE=~/$(ls -t ~ | grep $TEST_SET | head -1)
+		TEST_FILE=$(ls -t ~ | grep $TEST_SET | head -1)
+		if [ -z "$TEST_FILE" ]; then
+			TEST_ARCHIVE=~/${TEST_SET}.${HASH}.zip
+		else
+			TEST_ARCHIVE=~/${TEST_FILE}
+		fi
 	fi
 
 	if [ ! -e $TEST_ARCHIVE ]; then

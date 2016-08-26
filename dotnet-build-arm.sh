@@ -59,6 +59,16 @@ if [ -z "$TARGET_DEVICE" ]; then
     TARGET_DEVICE=pi2
 fi
 
+# set this path
+__Bash_Source="${BASH_SOURCE[0]}"
+while [ -h "$__Bash_Source" ]; do # resolve $SOURCE until the file is no longer a symlink
+  __Bash_dir="$( cd -P "$( dirname "$__Bash_Source" )" && pwd )"
+  __Bash_Source="$(readlink "$__Bash_Source")"
+  [[ $__Bash_Source != /* ]] && __Bash_Source="$__Bash_dir/$__Bash_Source" # if $SOURCE was a relative symlink, we need to resolve it relative to the path where the symlink file was located
+done
+__Bash_dir="$( cd -P "$( dirname "$__Bash_Source" )" && pwd )"
+
+
 # initialize configuration variable
 COMMAND_LINE="$(basename $0) $*"
 CONFIGURATION=
@@ -317,7 +327,7 @@ then
         rm -rf $BASE_PATH/coreclr/bin/tests/$OVERLAY
     fi
     message "[BUILD CORECLR TEST PACKAGE]"
-    dotnet-runtest.sh Linux.${ARCHITECTURE}.$CAP_CONFIGURATION --build-overlay-only
+    $__Bash_dir/dotnet-runtest.sh Linux.${ARCHITECTURE}.$CAP_CONFIGURATION --build-overlay-only
 fi
 
 if [ "$BUILD_COREFX_TEST" == "1" ]
@@ -328,7 +338,7 @@ then
         rm -rf $BASE_PATH/$COREFX_TEST_SET
     fi
     message "[BUILD COREFX TEST PACKAGE]"
-    build-corefx-test.sh Linux.${ARCHITECTURE}.$CAP_CONFIGURATION
+    $__Bash_dir/build-corefx-test.sh Linux.${ARCHITECTURE}.$CAP_CONFIGURATION
 fi
 
 # copy test running set to target
