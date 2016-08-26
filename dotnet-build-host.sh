@@ -23,6 +23,9 @@ function usage
     echo '           corefx-native : Build CoreFX native only.'
     echo '          corefx-managed : Build CoreFX managed only.'
     echo ''
+    echo '      --skip-build-tests : Skip build unit tests'
+    echo '    --skip-build-package : Skip build NuGet package'
+    echo ''
     echo '            --skip-build : Skip build.'
     echo '      --enable-jit-debug : Enable JIT code debugging with lldb + libsos.dll.'
     echo '     --copy-overlay-only : Don'"'"'t copy full CoreCLR test package. Instead, copy coreoverlay directory only.'
@@ -56,6 +59,10 @@ OUTERLOOP=
 BUILD_CORECLR=0
 BUILD_COREFX_NATIVE=0
 BUILD_COREFX_MANAGED=0
+SKIP_TESTS=
+SKIP_BUILD_TESTS=
+SKIP_NUGET=
+SKIP_BUILD_PACKAGES=
 
 function message
 {
@@ -130,6 +137,14 @@ do
         corefx-managed)
             BUILD_COREFX_MANAGED=1
             ;;
+        --skip-build-tests)
+            SKIP_TESTS=skiptests
+            SKIP_BUILD_TESTS=/p:BuildTests=false
+            ;;
+        --skip-build-package)
+            SKIP_NUGET=skipnuget
+            SKIP_BUILD_PACKAGES=/p:BuildPackages=false
+            ;;
         --skip-build)
             SKIP_BUILD=1
             ;;
@@ -174,8 +189,8 @@ then
     do_clean "CORECLR"
 
     message "[BUILD CORECLR]"
-    echo "$TIME ./build.sh $CONFIGURATION $VERBOSE $ENABLE_JIT_DEBUG clang3.8 |& tee $BASE_PATH/coreclr-build-${DATETIME}.log" | tee $BASE_PATH/coreclr-build-${DATETIME}.log
-    $TIME ./build.sh $CONFIGURATION $VERBOSE $ENABLE_JIT_DEBUG clang3.8 |& tee -a $BASE_PATH/coreclr-build-${DATETIME}.log
+    echo "$TIME ./build.sh $CONFIGURATION $SKIP_TESTS $SKIP_NUGET $VERBOSE $ENABLE_JIT_DEBUG clang3.8 2>&1 | tee $BASE_PATH/coreclr-build-${DATETIME}.log" | tee $BASE_PATH/coreclr-build-${DATETIME}.log
+    $TIME ./build.sh $CONFIGURATION $SKIP_TESTS $SKIP_NUGET $VERBOSE $ENABLE_JIT_DEBUG clang3.8 2>&1 | tee -a $BASE_PATH/coreclr-build-${DATETIME}.log
     RESULT=$?
     check_result $RESULT 1
 fi
@@ -192,8 +207,8 @@ then
     if [ "$BUILD_COREFX_NATIVE" == "1" ]
     then
         message "[BUILD COREFX-NATIVE]"
-        echo "$TIME ./build-native.sh -$CONFIGURATION -- /p:SkipTests=true $VERBOSE $OUTERLOOP /p:TestWithoutNativeImages=true |& tee $BASE_PATH/corefx-native-build-${DATETIME}.log" | tee $BASE_PATH/corefx-native-build-${DATETIME}.log
-        $TIME ./build-native.sh -$CONFIGURATION -- /p:SkipTests=true $VERBOSE $OUTERLOOP /p:TestWithoutNativeImages=true |& tee -a $BASE_PATH/corefx-native-build-${DATETIME}.log
+        echo "$TIME ./build-native.sh -$CONFIGURATION -- $SKIP_BUILD_PACKAGES /p:SkipTests=true $VERBOSE $OUTERLOOP /p:TestWithoutNativeImages=true 2>&1 | tee $BASE_PATH/corefx-native-build-${DATETIME}.log" | tee $BASE_PATH/corefx-native-build-${DATETIME}.log
+        $TIME ./build-native.sh -$CONFIGURATION -- $SKIP_BUILD_PACKAGES /p:SkipTests=true $VERBOSE $OUTERLOOP /p:TestWithoutNativeImages=true 2>&1 | tee -a $BASE_PATH/corefx-native-build-${DATETIME}.log
         RESULT=$?
         check_result $RESULT 2
     fi
@@ -201,8 +216,8 @@ then
     if [ "$BUILD_COREFX_MANAGED" == "1" ]
     then
         message "[BUILD COREFX-MANAGED]"
-        echo "$TIME ./build-managed.sh -$CONFIGURATION -- /p:SkipTests=true $OUTERLOOP /p:TestWithoutNativeImages=true |& tee $BASE_PATH/corefx-managed-build-${DATETIME}.log" | tee $BASE_PATH/corefx-managed-build-${DATETIME}.log
-        $TIME ./build-managed.sh -$CONFIGURATION -- /p:SkipTests=true $OUTERLOOP /p:TestWithoutNativeImages=true |& tee -a $BASE_PATH/corefx-managed-build-${DATETIME}.log
+        echo "$TIME ./build-managed.sh -$CONFIGURATION -- $SKIP_BUILD_TESTS $SKIP_BUILD_PACKAGES /p:SkipTests=true $OUTERLOOP /p:TestWithoutNativeImages=true 2>&1 | tee $BASE_PATH/corefx-managed-build-${DATETIME}.log" | tee $BASE_PATH/corefx-managed-build-${DATETIME}.log
+        $TIME ./build-managed.sh -$CONFIGURATION -- $SKIP_BUILD_TESTS $SKIP_BUILD_PACKAGES /p:SkipTests=true $OUTERLOOP /p:TestWithoutNativeImages=true 2>&1 | tee -a $BASE_PATH/corefx-managed-build-${DATETIME}.log
         RESULT=$?
         check_result $RESULT 4
     fi
