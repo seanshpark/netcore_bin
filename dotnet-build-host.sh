@@ -23,7 +23,7 @@ function usage
     echo '           corefx-native : Build CoreFX native only.'
     echo '          corefx-managed : Build CoreFX managed only.'
     echo ''
-    echo '      --skip-build-tests : Skip build unit tests'
+    echo '      --skip-build-tests : Skip build tests (PAL tests for CoreCLR, unit tests for CoreFX)'
     echo '    --skip-build-package : Skip build NuGet package'
     echo ''
     echo '            --skip-build : Skip build.'
