@@ -1161,7 +1161,7 @@ fi
 xunit_output_begin
 create_core_overlay
 precompile_overlay_assemblies
-copy_test_native_bin_to_test_root
+#copy_test_native_bin_to_test_root
 
 if [ "$buildOverlayOnly" == "ON" ];
 then
