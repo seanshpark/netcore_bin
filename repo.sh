@@ -8,7 +8,7 @@
 #
 COMMAND_LINE="$@"
 NEW_BRANCH=
-BRANCH=
+TARGET_BRANCH=
 
 function usage
 {
@@ -22,8 +22,8 @@ function usage
     echo '          version : display HASH of current working branch'
     echo ''
     echo '  [option]'
-    echo '         --branch : update current branch from origin'
-    echo '     --new-branch : update current branch from origin'
+    echo '         --branch : target branch to execute command'
+    echo '     --new-branch : new branch to create'
     echo ''
 }
 
@@ -133,15 +133,54 @@ function sync_repo
 
 function update
 {
-    if [ -e "$1/.git" ]; then
-        BRANCH=$(git -C $1 branch | grep '*' | cut -d' ' -f2-)
-        HASH=$(git -C $1 log -1 --format=%H)
+    local STASHED=0
+    local REPO=$1
+    local TARGET_BRANCH=$2
+    local NEW_BRANCH=$3
 
-        echo ">>>> update [$1] <<<<"
-        git -C $1 pull --rebase
-        echo "BRANCH:$BRANCH"
+    if [ -e "$REPO/.git" ]; then
+        UPSTREAM=$(git -C $REPO remote | grep -v origin)
+        BRANCH=$(git -C $REPO branch | grep '^*' | cut -d' ' -f2-)
+
+        if [ -z "$TARGET_BRANCH" ]
+        then
+            TARGET_BRANCH=$BRANCH
+        fi
+
+        if [ "$TARGET_BRANCH" != "$BRANCH" ]
+        then
+            STASH_RESULT=$(git -C $REPO stash)
+            if [ "$STASH_RESULT" != "No local changes to save" ]
+            then
+                STASHED=1
+            fi
+            git -C $REPO checkout $TARGET_BRANCH
+        fi
+
+        echo ">>>> [$REPO]: update branch [$TARGET_BRANCH] <<<<"
+
+        git -C $REPO pull --rebase
+
+        HASH=$(git -C $REPO log -1 --format=%H)
+        echo "BRANCH:$TARGET_BRANCH"
         echo "HASH:$HASH"
-        echo ""
+
+        if [ -n "$NEW_BRANCH" ]
+        then
+            echo ""
+            echo "[$REPO]: make new branch [$NEW_BRANCH] from [$TARGET_BRANCH], and checkout"
+            git -C $REPO branch $NEW_BRANCH $TARGET_BRANCH
+            git -C $REPO checkout $NEW_BRANCH
+            HASH=$(git -C $REPO log -1 --format=%H)
+            echo "BRANCH:$NEW_BRANCH"
+            echo "HASH:$HASH"
+            echo ""
+        fi
+
+        if [ "$STASHED" == "1" ]
+        then
+            git -C $REPO stash apply
+        fi
     fi
 }
 
@@ -151,13 +190,13 @@ function update_repo
         0)
             for repo in $(ls $BASE_PATH)
             do
-                update $repo
+                update $repo $TARGET_BRANCH $NEW_BRANCH
             done
             ;;
         *)
             while [ -n "$1" ] && [ -e $1/.git ]
             do
-                update $1
+                update $1 $TARGET_BRANCH $NEW_BRANCH
                 shift
             done
             ;;
@@ -232,7 +271,7 @@ do
             exit
             ;;
         --branch=*)
-            BRANCH=${1#*=}
+            TARGET_BRANCH=${1#*=}
             ;;
         --new-branch=*)
             NEW_BRANCH=${1#*=}
