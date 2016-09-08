@@ -219,18 +219,24 @@ run_test()
 
   pushd $dirName > /dev/null
 
-  rm -f mscorlib*
-#  rm -f {,lib}System.Native.*
-
+  # backup & modify RunTests.sh script 
   if [ ! -e RunTests.save ]; then
     mv RunTests.sh RunTests.save
   fi
 
   sed -e "/mscorlib/d" \
-      -e "s/\.\/corerun/mono/" \
+      -e "/native\/corerun/d" \
       -e "s/_DIR\/System.Native.so/&\nln {,lib}System.Native.so/" \
       -e "s/_DIR\/System.Native.a/&\nln {,lib}System.Native.a/" \
 	  RunTests.save > RunTests.sh
+
+  # clean up trouble files for mono runtime 
+  rm -f mscorlib*
+  rm -f corerun
+  rm -f {,lib}System.Native.*
+
+  # create synbolic link of mono runtime to cheat as corerun
+  ln -s $(which mono) corerun
 
   chmod +x ./RunTests.sh
   chmod +x ./corerun
@@ -246,6 +252,9 @@ run_test()
   then
     echo "error: One or more tests failed while running tests from '$fileNameWithoutExtension'.  Exit code $exitCode."
   fi
+
+  # remove fake link of mono runtime for next run with corerun
+  rm -f corerun
 
   popd > /dev/null
   exit $exitCode
