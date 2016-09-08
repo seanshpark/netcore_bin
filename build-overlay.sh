@@ -144,7 +144,7 @@ function precompile_overlay_assemblies
     done
 }
 
-coreOverlayDir="${BASE_PATH}/dotnet-overlay"
+coreOverlayDir="${BASE_PATH}/dotnet-overlay-${OS}.${ARCHITECTURE}.${BUILD}"
 coreClrBinDir="coreclr/bin/Product/${OS}.${ARCHITECTURE}.${BUILD}"
 mscorlibDir="coreclr/bin/Product/${OS}.${ARCHITECTURE}.${BUILD}"
 coreFxBinDir="corefx/bin/${OS}.${ARCHITECTURE}.${BUILD};corefx/bin/${OS}.AnyCPU.${BUILD};corefx/bin/Unix.AnyCPU.${BUILD};corefx/bin/AnyOS.AnyCPU.${BUILD};"
