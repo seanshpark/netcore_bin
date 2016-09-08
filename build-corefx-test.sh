@@ -23,6 +23,11 @@ OS=${TARGET[0]}
 ARCHITECTURE=${TARGET[1]}
 BUILD=${TARGET[2]}
 
+if [ -z $OS ] || [ -z $ARCHITECTURE ] || [ -z $BUILD ]; then
+    usage
+    exit
+fi
+
 if [ -z "$BASE_PATH" ]; then
     BASE_PATH=$(pwd)
 fi
