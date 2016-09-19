@@ -100,7 +100,7 @@ function sync
             git -C $REPO branch $NEW_BRANCH master
             git -C $REPO checkout $NEW_BRANCH
             HASH=$(git -C $REPO log -1 --format=%H)
-            echo "BRANCH:$BRANCH"
+            echo "BRANCH:$NEW_BRANCH"
             echo "HASH:$HASH"
             echo ""
         fi
