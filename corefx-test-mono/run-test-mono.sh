@@ -239,7 +239,6 @@ run_test()
   ln -s $(which mono) corerun
 
   chmod +x ./RunTests.sh
-  chmod +x ./corerun
 
   echo
   echo "Running tests in $dirName"
