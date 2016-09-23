@@ -70,4 +70,4 @@ done
 
 BASE_PATH=$(pwd)
 
-./run-test-mono.sh --sequential --configurationGroup ${TEST_CONFIGURATION} --coreclr-bins $BASE_PATH/coreclr/bin/Product/Linux.${ARCH}.Release --mscorlib-bins $BASE_PATH/coreclr/bin/Product/Linux.${ARCH}.Release --corefx-tests $BASE_PATH/corefx/bin/tests --corefx-native-bins $BASE_PATH/corefx/bin/Linux.${ARCH}.Release/Native --corefx-packages $BASE_PATH/corefx/packages $EXTRA_OPTIONS | tee $BASE_PATH/corefx-Linux.${ARCH}.Release-test.log
+./run-test-mono.sh --sequential --configurationGroup ${TEST_CONFIGURATION} --coreclr-bins $BASE_PATH/coreclr/bin/Product/Linux.${ARCH}.Release --mscorlib-bins $BASE_PATH/coreclr/bin/Product/Linux.${ARCH}.Release --corefx-tests $BASE_PATH/corefx/bin/tests --corefx-native-bins $BASE_PATH/corefx/bin/Linux.${ARCH}.Release/Native --corefx-packages $BASE_PATH/corefx/packages $EXTRA_OPTIONS |& tee $BASE_PATH/corefx-Linux.${ARCH}.Release-test-mono.log
