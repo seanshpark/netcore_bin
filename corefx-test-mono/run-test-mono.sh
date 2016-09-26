@@ -227,13 +227,24 @@ run_test()
   sed -e "/mscorlib/d" \
       -e "/native\/corerun/d" \
       -e "s/_DIR\/System.Native.so/&\nln {,lib}System.Native.so/" \
-      -e "s/_DIR\/System.Native.a/&\nln {,lib}System.Native.a/" \
+      -e "s/_DIR\/System.Globalization.Native.so/&\nln {,lib}System.Globalization.Native.so/" \
+      -e "s/_DIR\/System.IO.Compression.Native.so/&\nln {,lib}System.IO.Compression.Native.so/" \
+      -e "s/_DIR\/System.Net.Http.Native.so/&\nln {,lib}System.Net.Http.Native.so/" \
+      -e "s/_DIR\/System.Net.Security.Native.so/&\nln {,lib}System.Net.Security.Native.so/" \
+      -e "s/_DIR\/System.Security.Cryptography.Native.OpenSsl.so/&\nln {,lib}System.Security.Cryptography.Native.OpenSsl.so/" \
+      -e "s/_DIR\/System.Security.Cryptography.Native.so/&\nln {,lib}System.Security.Cryptography.Native.so/" \
 	  RunTests.save > RunTests.sh
 
   # clean up trouble files for mono runtime 
   rm -f mscorlib*
   rm -f corerun
   rm -f {,lib}System.Native.*
+  rm -f {,lib}System.Globalization.Native.*
+  rm -f {,lib}System.IO.Compression.Native.*
+  rm -f {,lib}System.Net.Http.Native.*
+  rm -f {,lib}System.Net.Security.Native.*
+  rm -f {,lib}System.Security.Cryptography.Native.OpenSsl.*
+  rm -f {,lib}System.Security.Cryptography.Native.*
 
   # create synbolic link of mono runtime to cheat as corerun
   ln -s $(which mono) corerun
@@ -244,7 +255,7 @@ run_test()
   echo "Running tests in $dirName"
   echo "./RunTests.sh $CoreFxPackages"
   echo
-  ./RunTests.sh "$CoreFxPackages"
+  LD_LIBRARY_PATH="$(pwd):$LD_LIBRARY_PATH" ./RunTests.sh "$CoreFxPackages"
   exitCode=$?
 
   if [ $exitCode -ne 0 ]
