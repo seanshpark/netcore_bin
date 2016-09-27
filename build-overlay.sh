@@ -61,6 +61,19 @@ case $OSName in
         ;;
 esac
 
+function check_repo_version
+{
+    if [ -e "$1/.git" ]; then
+        BRANCH=$(git -C $1 branch | grep '^*' | cut -d' ' -f2-)
+        HASH=$(git -C $1 log -1 --format=%H)
+
+        echo "[$1]"
+        echo "BRANCH:$BRANCH"
+        echo "HASH:$HASH"
+        echo ""
+    fi
+}
+
 function create_core_overlay 
 {
     if [ -z "$coreClrBinDir" ] || [ ! -d "$coreClrBinDir" ]; then
@@ -110,7 +123,6 @@ function create_core_overlay
 
     cp -f -v "$coreFxNativeBinDir/Native/"*."$libExtension" "$coreOverlayDir/" 2>/dev/null
     cp -f -v "$coreClrBinDir/"* "$coreOverlayDir/" 2>/dev/null
-    #    cp -f -v "$coreClrBinDir/bin/"* "$coreOverlayDir/" 2>/dev/null
     cp -f -v "$mscorlibDir/mscorlib.dll" "$coreOverlayDir/"
 
     #    cp -n -v "$testDependenciesDir"/* "$coreOverlayDir/" 2>/dev/null
@@ -118,6 +130,10 @@ function create_core_overlay
     #        # Test dependencies come from a Windows build, and mscorlib.ni.dll would be the one from Windows
     #        rm -f "$coreOverlayDir/mscorlib.ni.dll"
     #    fi
+
+    VERSION_INFO_FILE="${coreOverlayDir}/version.txt"
+    check_repo_version "${BASE_PATH}/coreclr" | tee $VERSION_INFO_FILE
+    check_repo_version "${BASE_PATH}/corefx" | tee -a $VERSION_INFO_FILE
 }
 
 function precompile_overlay_assemblies 
