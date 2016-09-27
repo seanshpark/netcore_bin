@@ -138,6 +138,8 @@ function create_core_overlay
 
 function precompile_overlay_assemblies 
 {
+    local overlayDir=$coreOverlayDir
+
     filesToPrecompile=$(ls -trh $overlayDir/*.dll)
     for fileToPrecompile in ${filesToPrecompile}
     do
