@@ -40,9 +40,9 @@ fi
 
 mkdir -p "$TEST_ROOT"
 
-CORECLR_BIN=$TEST_ROOT/coreclr/bin/Product
+CORECLR_BIN=$TEST_ROOT/coreclr/bin/Product/${OS}.${ARCHITECTURE}.${BUILD}
 TESTS=$TEST_ROOT/corefx/bin/tests
-COREFX_NATIVE=$TEST_ROOT/corefx/bin/${OS}.${ARCHITECTURE}.${BUILD}
+COREFX_NATIVE=$TEST_ROOT/corefx/bin/${OS}.${ARCHITECTURE}.${BUILD}/Native
 PACKAGES=$TEST_ROOT/corefx
 TEST_SCRIPT=$TEST_ROOT/run-corefx-test.sh
 
@@ -102,6 +102,21 @@ END
     chmod 775 $TEST_SCRIPT
 }
 
+function copy_test_packages
+{
+    export PACKAGE_SRC_DIR=$2
+    export PACKAGE_TARGET_DIR=$3
+
+    find $1 -name RunTests.sh -exec grep copy_and_check {} \; \
+        | grep -v "function copy_and_check" \
+        | sed -e "s/copy_and_check //" \
+        | sed -e "s/\ $EXECUTION_DIR.*//" \
+        | sort \
+        | uniq \
+        | sed -e "s/\$PACKAGE_DIR\(.*\)/mkdir -p \$(dirname \$PACKAGE_TARGET_DIR\1); cp -a \$PACKAGE_SRC_DIR\1 \$PACKAGE_TARGET_DIR\1/" \
+        | /bin/bash
+}
+
 generate_test_runner_script
 
 mkdir -p "$CORECLR_BIN"
@@ -109,19 +124,21 @@ mkdir -p "$TESTS"
 mkdir -p "$COREFX_NATIVE"
 mkdir -p "$PACKAGES"
 
-cp -a $BASE_PATH/coreclr/bin/Product/${OS}.${ARCHITECTURE}.${BUILD} $CORECLR_BIN
+cp -a $BASE_PATH/coreclr/bin/Product/${OS}.${ARCHITECTURE}.${BUILD}/*.dll $CORECLR_BIN
+cp -a $BASE_PATH/coreclr/bin/Product/${OS}.${ARCHITECTURE}.${BUILD}/*.so $CORECLR_BIN
+cp -a $BASE_PATH/coreclr/bin/Product/${OS}.${ARCHITECTURE}.${BUILD}/coreconsole $CORECLR_BIN
+cp -a $BASE_PATH/coreclr/bin/Product/${OS}.${ARCHITECTURE}.${BUILD}/corerun $CORECLR_BIN
+cp -a $BASE_PATH/coreclr/bin/Product/${OS}.${ARCHITECTURE}.${BUILD}/crossgen $CORECLR_BIN
+cp -a $BASE_PATH/coreclr/bin/Product/${OS}.${ARCHITECTURE}.${BUILD}/ilasm $CORECLR_BIN
+cp -a $BASE_PATH/coreclr/bin/Product/${OS}.${ARCHITECTURE}.${BUILD}/ildasm $CORECLR_BIN
+cp -a $BASE_PATH/coreclr/bin/Product/${OS}.${ARCHITECTURE}.${BUILD}/mcs $CORECLR_BIN
+cp -a $BASE_PATH/coreclr/bin/Product/${OS}.${ARCHITECTURE}.${BUILD}/superpmi $CORECLR_BIN
+
 cp -a $BASE_PATH/corefx/bin/tests/*.${BUILD} $TESTS
-cp -a $BASE_PATH/corefx/bin/${OS}.${ARCHITECTURE}.${BUILD}/Native $COREFX_NATIVE
-cp -a $BASE_PATH/corefx/packages $PACKAGES
+
+cp -a $BASE_PATH/corefx/bin/${OS}.${ARCHITECTURE}.${BUILD}/Native/*.so $COREFX_NATIVE
+cp -a $BASE_PATH/corefx/bin/${OS}.${ARCHITECTURE}.${BUILD}/Native/*.a $COREFX_NATIVE
+
+copy_test_packages "$TEST_ROOT/corefx/bin/tests" "$BASE_PATH/corefx/packages" "$TEST_ROOT/corefx/packages"
 
 cp -a $BASE_PATH/corefx/run-test.sh $TEST_ROOT
-
-#./run-test.sh \
-#--sequential \
-#--coreclr-bins /home/sjlee/git/coreclr/bin/Product/Linux.arm.Debug \
-#--mscorlib-bins /home/sjlee/git/coreclr/bin/Product/Linux.arm.Debug \
-#--corefx-tests /home/sjlee/git/corefx/bin/tests \
-#--corefx-native-bins /home/sjlee/git/corefx/bin/Linux.arm.Debug/Native \
-#--corefx-packages /home/sjlee/git/corefx/packages \
-#$EXTRA_OPTIONS \
-#| tee $LOG_FILE
