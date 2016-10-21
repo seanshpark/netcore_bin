@@ -335,6 +335,12 @@ then
     fi
     message "[BUILD CORECLR TEST PACKAGE]"
     $__Bash_dir/dotnet-runtest.sh Linux.${ARCHITECTURE}.$CAP_CONFIGURATION --build-overlay-only
+
+    find $BASE_PATH/coreclr/bin/tests -name *.dbg -delete
+    find $BASE_PATH/coreclr/bin/tests -name *.lib -delete
+    find $BASE_PATH/coreclr/bin/tests -name *.exp -delete
+    find $BASE_PATH/coreclr/bin/tests -name *.cmd -delete
+    find $BASE_PATH/coreclr/bin/tests -name *.lock.json -delete
 fi
 
 if [ "$BUILD_COREFX_TEST" == "1" ]
